@@ -64,7 +64,7 @@ int add_client(struct pollfd* client_poll_fd, int server_fd) {
 int serve_client(int client_fd) {
     char* buf = NULL;  // Буффер чтения/записи
     int len;           // Прочтенная/записанная длина
-    int new_len;       // Длина для передачи
+    int new_len;       // Длина для передачи сообщения
  
     // Получение информации с клиента
     len = full_recv(client_fd, &buf, BUFSIZE, 0);
