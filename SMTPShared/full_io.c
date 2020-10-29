@@ -66,9 +66,8 @@ size_t full_recv(int fd, char** out_buf, int read_size, int flags) {
         }
 
         // Если последний прочитанный символ - 4 (EOT), 
-        // Значит дошли до конца передачи и заменяем его на \0 (EOS)
+        // Значит дошли до конца передачи
         if (buf[recv_len - 1] == EOT) {
-            buf[recv_len - 1] = EOS;
             received_flag = 1;
         }
 

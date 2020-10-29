@@ -19,7 +19,7 @@ shared.o: SMTPShared/full_io.h SMTPShared/full_io.c directories
 	gcc $(C_VER) $(FLAGS) -c SMTPShared/full_io.c -o build/shared.o
 
 directories:
-	mkdir build
+	mkdir -p build
 
 clean:
 	rm -rf build/*.o server client

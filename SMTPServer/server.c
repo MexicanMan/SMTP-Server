@@ -71,14 +71,8 @@ int serve_client(int client_fd) {
     if (len > 0) {
         printf("\n>> Recieved \"%s\" from %d\n", buf, client_fd);
 
-        // Для отправки необходимо в конце добавить символ конца передачи (EOT) и \0
-        new_len = len + 1;
-        buf = (char*) realloc(buf, new_len);
-        buf[len] = EOT;
-        buf[new_len] = EOS;
-
         // Отправка эхо-ответа клиенту
-        if ((len = full_send(client_fd, buf, new_len, 0)) > 0)
+        if ((len = full_send(client_fd, buf, len, 0)) > 0)
             printf("<< Sent back to client %d\n", client_fd);
     } else if (len == 0) {
         // Закрываем соединение с клиентом

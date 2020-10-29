@@ -72,12 +72,15 @@ int main(int argc, char **argv)
             }
 
             if (len < BUFSIZE-2) {
-                buf[len-1] = 4;
+                buf[len-1] = EOS;
+                buf[len] = EOT;
+                len = len + 1;
             }
             else
             {
-                buf[len] = 4;
-                buf[len+1] = '\0';
+                buf[len] = EOS;
+                buf[len+1] = EOT;
+                len = BUFSIZE;
             }
             
             if (strlen(buf) == 0)
@@ -85,7 +88,7 @@ int main(int argc, char **argv)
             if (strcmp(buf, "/q") == 0)
                 break;
 
-            if (send(sk, buf, strlen(buf), 0) < 0) {
+            if (send(sk, buf, len, 0) < 0) {
                 perror("send");
                 exit(1);
             }
