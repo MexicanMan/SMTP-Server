@@ -65,13 +65,16 @@ int main(int argc, char **argv)
             exit(1);
         }
  
-        if (FD_ISSET(0, &ready_set)) {
-            if ((len = read(0, buf, BUFSIZE-2)) < 0) {
+        if (FD_ISSET(0, &ready_set)) 
+        {
+            if ((len = read(0, buf, BUFSIZE-2)) < 0) 
+            {
                 perror("read");
                 exit(1);
             }
 
-            if (len < BUFSIZE-2) {
+            if (len < BUFSIZE-2) 
+            {
                 buf[len-1] = EOS;
                 buf[len] = EOT;
                 len = len + 1;
@@ -88,18 +91,22 @@ int main(int argc, char **argv)
             if (strcmp(buf, "/q") == 0)
                 break;
 
-            if (send(sk, buf, len, 0) < 0) {
+            if (full_send(sk, buf, len, 0) < 0)
+            {
                 perror("send");
                 exit(1);
             }
         }
 
-        if (FD_ISSET(sk, &ready_set)) {
+        if (FD_ISSET(sk, &ready_set)) 
+        {
             len = recv(sk, buf, BUFSIZE, 0);
-            if (len < 0) {
+            if (len < 0) 
+            {
                 perror("recv");
                 exit(1);
-            } else if (len == 0) {
+            } else if (len == 0) 
+            {
                 printf("Remote host has closed the connection\n");
                 exit(1);
             }
