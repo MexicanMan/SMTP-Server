@@ -76,14 +76,6 @@ int main(int argc, char **argv)
             if (len < BUFSIZE-2) 
             {
                 buf[len-1] = EOS;
-                buf[len] = EOT;
-                len = len + 1;
-            }
-            else
-            {
-                buf[len] = EOS;
-                buf[len+1] = EOT;
-                len = BUFSIZE;
             }
             
             if (strlen(buf) == 0)

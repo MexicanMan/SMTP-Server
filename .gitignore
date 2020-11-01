@@ -53,6 +53,10 @@ dkms.conf
 
 # Build folder
 build
+CMakeFiles
+*.cmake
+CMakeCache.txt
+Makefile
 
 # Binaries 
 client

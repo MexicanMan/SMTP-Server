@@ -11,15 +11,16 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "../SMTPShared/socket_dictionary.h"
 #include "../SMTPShared/full_io.h"
  
-#define BUFSIZE 2        // Размер буффера для чтения/записи
+#define BUFSIZE 2       
  
-#define POLL_SIZE 1024     // Размер буффера poll'а 
-#define POLL_SERVER_IND 0  // Индекс сокета сервера в буффере poll'а
-#define POLL_WAIT 1000     // Время ожидания poll'а
+#define POLL_SIZE 1024     
+#define POLL_SERVER_IND 0  
+#define POLL_WAIT 1000  
  
-#define SERVER_PORT 8080   // Порт сервера
+#define SERVER_PORT 8080  
  
 static volatile int is_running = 1;
  
@@ -48,7 +49,7 @@ int add_client(struct pollfd* client_poll_fd, int server_fd) {
     return 0;
 }
  
-int serve_client(int client_fd) {
+/*int serve_client(int client_fd) {
     char* buf = NULL; 
     int len;   
 
@@ -69,6 +70,24 @@ int serve_client(int client_fd) {
     }
 
     return len;
+}*/
+
+int serve_client(int client_fd) {
+    char buf[BUFSIZE]; 
+    int len;   
+
+    len = recv(client_fd, buf, BUFSIZE, 0);
+    if (len > 0) {
+        printf("\n>> Recieved \"%s\" from %d\n", buf, client_fd);
+
+        if ((len = full_send(client_fd, buf, len, 0)) > 0)
+            printf("<< Sent back to client %d\n", client_fd);
+    } else if (len == 0) {
+        printf("\n>> Client %d closed connection\n", client_fd);
+        close(client_fd);
+    }
+
+    return len;
 }
 
 int main() {
@@ -80,7 +99,7 @@ int main() {
     int poll_res;  
  
     signal(SIGINT, int_handler);
- 
+
     printf("Starting server...\n");
  
     if ((sock_d = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
