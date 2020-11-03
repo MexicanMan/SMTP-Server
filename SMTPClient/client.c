@@ -72,12 +72,15 @@ int main(int argc, char **argv)
                 perror("read");
                 exit(1);
             }
-
-            if (len < BUFSIZE-2) 
-            {
-                buf[len-1] = EOS;
-            }
             
+            buf[0] = '1';
+            buf[1] = '1';
+            buf[2] = '\n';
+            buf[3] = '.';
+            buf[4] = '\n';
+            buf[5] = '2';
+            len = 6;
+
             if (strlen(buf) == 0)
                 continue;
             if (strcmp(buf, "/q") == 0)

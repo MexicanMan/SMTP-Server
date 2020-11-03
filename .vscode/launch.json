@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build-server"
+            "preLaunchTask": "build"
         },
         {
             "name": "(gdb) Client launch",
@@ -42,7 +42,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build-client"
+            "preLaunchTask": "build"
         }
     ]
 }

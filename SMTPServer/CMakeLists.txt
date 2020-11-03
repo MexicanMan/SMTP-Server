@@ -8,4 +8,4 @@ set(dir ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(EXECUTABLE_OUTPUT_PATH ${dir} CACHE PATH "Build directory" FORCE)
 set(CMAKE_BINARY_DIR  ${dir})
 
-add_executable(server server.c ../SMTPShared/socket_dictionary.c ../SMTPShared/full_io.c)
+add_executable(server server.c pollbuf_dictionary.c ../SMTPShared/full_io.c)
