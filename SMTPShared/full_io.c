@@ -25,27 +25,7 @@ size_t concat_dynamic_strings(char** str1, const char* str2, size_t str1_len, si
     return extended_len;
 }
 
-size_t concat_dynamic_strings_from(char** str1, const char* str2, size_t str1_len, size_t from, size_t to) {
-    size_t str2_len = to - from + 1;
-    size_t extended_len = str1_len + str2_len;
-    char *extended_memory = (char*) calloc(extended_len, sizeof(char));
-    if (!extended_memory) {
-        if (*str1)
-            free(*str1);
-            
-        return -1;
-    }
-
-    memcpy(extended_memory, *str1, sizeof(char) * str1_len);
-    memcpy(extended_memory + str1_len, str2 + from, sizeof(char) * str2_len);
-
-    if (*str1)
-        free(*str1);
-    *str1 = extended_memory;
-
-    return extended_len;
-}
-
+// ToDo: rewrite or delete
 size_t full_recv(int fd, char** out_buf, int read_size, int flags) {
     char buf[read_size];   
     int received_flag = 0; 
@@ -70,8 +50,6 @@ size_t full_recv(int fd, char** out_buf, int read_size, int flags) {
             return recv_len;
         }
 
-        // Если последний прочитанный символ - 4 (EOT), 
-        // Значит дошли до конца передачи
         if (buf[recv_len - 1] == EOT[0]) {
             received_flag = 1;
         }

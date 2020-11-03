@@ -132,7 +132,6 @@ int main() {
     struct sockaddr_in addr;       // Адрес сервера
     pollbuf_dictionary *buf_dict;  // Буфер для сообщений от сокетов в poll'е
     int option = 1;                // Option для SO_REUSEADDR
-    int poll_res; 
  
     signal(SIGINT, int_handler);
 
@@ -169,7 +168,7 @@ int main() {
 
     printf("Server listening --- press Ctrl-C to stop\n");
     while (is_running) {
-        poll_res = poll(fds, fd_max + 1, POLL_WAIT);
+        int poll_res = poll(fds, fd_max + 1, POLL_WAIT);
  
         if (poll_res < -1) {
             perror("poll");
