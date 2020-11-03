@@ -9,6 +9,11 @@ void dict_free(pollbuf_dictionary** dict) {
 
     for (curr = *dict; curr != NULL; curr = next) {
         next = curr->next;
+        
+        poll_socket_buf val = curr->value;
+        if (val.buf)
+            free(val.buf);
+
         free(curr);
     }   
 }

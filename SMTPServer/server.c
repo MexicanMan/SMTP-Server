@@ -15,7 +15,7 @@
 
 #include "../SMTPShared/full_io.h"
  
-#define BUFSIZE 6       
+#define BUFSIZE 4       
  
 #define POLL_SIZE 1024     
 #define POLL_SERVER_IND 0  
@@ -65,6 +65,12 @@ int send_to_client(int client_fd, char* buf, int len) {
     return send_len;
 }
 
+void reset_buf(poll_socket_buf* buf) {
+    free(buf->buf);
+    buf->buf = NULL;
+    buf->len = 0;
+}
+
 int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
     char buf[BUFSIZE]; 
     int len; 
@@ -72,54 +78,47 @@ int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
 
     len = recv(client_fd, buf, BUFSIZE, 0);
     if (len > 0) {
-        int message_begin_index = 0;  
-        int message_end_index = -1;
+        int concat_res = concat_dynamic_strings(&client_buf->buf, buf, client_buf->len, len);
+        if (concat_res < 0)
+            return concat_res;
+        client_buf->len += len;
 
-        // Итерируемся по прочитанному и ищем флаги конца передачи
-        for (int i = 0; i < len-2; i++) {
-            if (buf[i] == EOT[0] && buf[i+1] == EOT[1] && buf[i+2] == EOT[2]) {
-                // Как только нашли флаг конца передачи, собираем сообщение и полученных сейчас и ранее
-                message_end_index = i+2;
+        // Итерируемся по всему прочитанному и ищем флаги конца передачи
+        for (int i = 0; i < client_buf->len-2; i++) {
+            if (client_buf->buf[i] == EOT[0] && client_buf->buf[i+1] == EOT[1] 
+                && client_buf->buf[i+2] == EOT[2]) {
+                // Как только нашли флаг конца передачи, вырезаем сообщение
+                int message_end_index = i+2;
 
-                int concat_res = concat_dynamic_strings_from(&client_buf->buf, buf, client_buf->len, 
-                    message_begin_index, message_end_index);
-                if (concat_res < 0)
-                    return concat_res;
+                char *message = client_buf->buf;
+                message[message_end_index] = '\0';
 
-                client_buf->len += message_end_index - message_begin_index + 1;
-                client_buf->buf[client_buf->len] = '\0';
+                printf("\n>> Recieved \"%s\" from %d\n", message, client_fd);
 
-                printf("\n>> Recieved \"%s\" from %d\n", client_buf->buf, client_fd);
+                message[message_end_index] = EOT[2];
 
-                send_to_client(client_fd, client_buf->buf, client_buf->len);
+                int msg_len = message_end_index + 1;
+                send_to_client(client_fd, message, msg_len);
 
-                free(client_buf->buf);
-                client_buf->buf = NULL;
-                client_buf->len = 0;
+                if (msg_len != client_buf->len) {
+                    // Смещаем буфер клиента влево на прочитанное сообщение и идем сначала
+                    client_buf->len -= msg_len;
+                    memcpy(client_buf->buf, client_buf->buf+msg_len, 
+                        sizeof(char) * client_buf->len);
 
-                i += 2;  // Пропускаем две итерации, т.к. следующие символы '.\n'
-                message_begin_index = i + 1;
+                    i = -1;
+                } else {
+                    reset_buf(client_buf);
+                }
             }
-        }
-        
-        // Если еще что-то осталось не прочитанное, сохраняем на будущее
-        if (message_begin_index <= len - 1) {
-            int concat_res = concat_dynamic_strings_from(&client_buf->buf, buf, client_buf->len, 
-                message_begin_index, len - 1);
-            if (concat_res < 0)
-                return concat_res;
-
-            client_buf->len += len - message_begin_index;
         }
     } else if (len == 0) {
         printf("\n>> Client %d closed connection\n", client_fd);
 
         close(client_fd);
 
-        if (!client_buf->buf) {
-            free(client_buf->buf);
-            client_buf->buf = NULL;
-            client_buf->len = 0;
+        if (client_buf->buf) {
+            reset_buf(client_buf);
         }
     }
 
@@ -197,7 +196,7 @@ int main() {
                         del_item(&buf_dict, fds[i].fd);
 
                         if (i < fd_max)
-                            memcpy(&fds[i], &fds[i + 1], sizeof(struct pollfd) * (fd_max - i));
+                            memcpy(fds+i, fds+i+1, sizeof(struct pollfd) * (fd_max - i));
                         fd_max--;
                     } else if (res < 0) {
                         perror("serve_client");
