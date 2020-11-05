@@ -12,7 +12,11 @@
  
 #include "../SMTPShared/full_io.h"
 
-#define BUFSIZE 2048
+#define BUFSIZE 4
+
+#define END_S "\n.\n"
+
+int full_read(char** input);
  
 int main(int argc, char **argv) 
 {
@@ -20,7 +24,9 @@ int main(int argc, char **argv)
     socklen_t addrlen;          /* размер структуры с адресом */
     int sk;                     /* файловый дескриптор сокета */
     char buf[BUFSIZE];          /* буфер для сообщений */
-    char inp_buf[BUFSIZE];
+	char recv_buf[BUFSIZE];
+    char* inp_buf = NULL;
+	char* print_buf = NULL;
     int len;
     fd_set filed_set, ready_set;
  
@@ -67,36 +73,69 @@ int main(int argc, char **argv)
  
         if (FD_ISSET(0, &ready_set)) 
         {
-            if ((len = read(0, buf, BUFSIZE-2)) < 0) 
+			//printf("dal\n");
+            if ((len = read(0, buf, BUFSIZE-1)) < 0) 
             {
                 perror("read");
                 exit(1);
             }
-            
-            // Tmp
-            buf[0] = '1';
-            buf[1] = '1';
-            buf[2] = '\n';
-            buf[3] = '.';
-            buf[4] = '\n';
-            buf[5] = '2';
-            len = 6;
 
-            if (strlen(buf) == 0)
+			if (strlen(buf) == 0)
                 continue;
             if (strcmp(buf, "/q") == 0)
                 break;
 
-            if (full_send(sk, buf, len, 0) < 0)
-            {
-                perror("send");
+			buf[len] = '\0';
+			
+			size_t input_size = 0;
+			if(inp_buf != NULL)
+				input_size = strlen(inp_buf);
+			size_t full_len = concat_dynamic_strings(&inp_buf, buf, input_size, len);
+			//Потом переделать (или написать на основе старой) функцию объединения буферов
+			if(full_len < 0)
+			{
+				perror("concat");
                 exit(1);
-            }
+			}
+			
+			char* end = strstr(inp_buf, END_S);
+			//printf("buf - %s\n", buf);
+			//printf("ibuf - %s\n", inp_buf);
+			if(end != NULL)
+			{
+				//printf("es\n");
+				int pr_len = end-inp_buf;
+				int end_len = strlen(END_S);
+				int post_len = strlen(end) - end_len;
+
+				char* pr_buf = (char*) calloc(pr_len+end_len, sizeof(char));
+				char* post_buf = (char*) calloc(post_len, sizeof(char));
+
+				memcpy(pr_buf, inp_buf, sizeof(char) * (pr_len + end_len));
+				memcpy(post_buf, end+end_len, sizeof(char) * post_len);
+
+				//printf("pr_buf - %s\n", pr_buf);
+				//printf("post_buf - %s\n", post_buf);
+				
+				//printf("Otsilayu - %s\n", pr_buf);
+				if (full_send(sk, pr_buf, sizeof(char) * (pr_len + end_len), 0) < 0)
+		        {
+		            perror("send");
+		            exit(1);
+		        }
+
+				free(pr_buf);
+				free(post_buf);
+				free(inp_buf);
+				inp_buf = NULL;
+
+			}
+
         }
 
         if (FD_ISSET(sk, &ready_set)) 
         {
-            len = recv(sk, buf, BUFSIZE, 0);
+            len = recv(sk, recv_buf, BUFSIZE, 0);
             if (len < 0) 
             {
                 perror("recv");
@@ -107,8 +146,39 @@ int main(int argc, char **argv)
                 exit(1);
             }
 
-            buf[len] = '\0';
-            printf("<< %s\n", buf);
+			size_t print_size = 0;
+			if(print_buf != NULL)
+				print_size = strlen(print_buf);
+			size_t full_len = concat_dynamic_strings(&print_buf, recv_buf, print_size, len);
+			//Потом переделать (или написать на основе старой) функцию объединения буферов
+			if(full_len < 0)
+			{
+				perror("concat");
+                exit(1);
+			}
+			//Накопление и печать
+			
+			char* end = strstr(print_buf, END_S);
+			if(end != NULL)
+			{
+				int pr_len = end-print_buf;
+				int end_len = strlen(END_S);
+				int post_len = strlen(end) - end_len;
+
+				char* pr_buf = (char*) calloc(pr_len+end_len, sizeof(char));
+				char* post_buf = (char*) calloc(post_len, sizeof(char));
+
+				memcpy(pr_buf, print_buf, sizeof(char) * (pr_len + end_len));
+				memcpy(post_buf, end+end_len, sizeof(char) * post_len);
+
+				printf("<< %s\n", print_buf);
+
+				free(pr_buf);
+				free(post_buf);
+				free(print_buf);
+				print_buf = NULL;
+
+			}   
         }
     }
  
