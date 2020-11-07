@@ -20,7 +20,7 @@
 #define POLL_SIZE 1024     
 #define POLL_SERVER_IND 0  
 #define POLL_WAIT 1000  
- 
+
 #define SERVER_PORT 8080  
  
 static volatile int is_running = 1;
@@ -168,7 +168,7 @@ int main() {
 
     printf("Server listening --- press Ctrl-C to stop\n");
     while (is_running) {
-        int poll_res = poll(fds, fd_max + 1, POLL_WAIT);
+        int poll_res = poll(fds, fd_max + 1, POLL_WAIT);  // Отдельный канал для сигинта добавить
  
         if (poll_res < -1) {
             perror("poll");

@@ -62,13 +62,13 @@ int main(int argc, char **argv)
     }
  
     printf("Connected to Echo server. Type /q to quit.\n");
-    while (1) 
+    while (1) //добавить переменную условия
     {
         ready_set = filed_set;
         if (select(sk+1, &ready_set, NULL, NULL, NULL) == -1) 
         {
             perror("select");
-            exit(1);
+            exit(1);//смэрт
         }
  
         if (FD_ISSET(0, &ready_set)) 
@@ -98,14 +98,14 @@ int main(int argc, char **argv)
                 exit(1);
 			}
 			
-			char* end = strstr(inp_buf, END_S);
+			char* end = strstr(inp_buf, "\n");
 			//printf("buf - %s\n", buf);
 			//printf("ibuf - %s\n", inp_buf);
 			if(end != NULL)
 			{
 				//printf("es\n");
 				int pr_len = end-inp_buf;
-				int end_len = strlen(END_S);
+				int end_len = strlen("\n");
 				int post_len = strlen(end) - end_len;
 
 				char* pr_buf = (char*) calloc(pr_len+end_len, sizeof(char));
@@ -118,6 +118,7 @@ int main(int argc, char **argv)
 				//printf("post_buf - %s\n", post_buf);
 				
 				//printf("Otsilayu - %s\n", pr_buf);
+                //смэрт 2
 				if (full_send(sk, pr_buf, sizeof(char) * (pr_len + end_len), 0) < 0)
 		        {
 		            perror("send");
