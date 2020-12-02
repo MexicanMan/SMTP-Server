@@ -3,7 +3,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "./build_debug.sh",
+            "command": "make all",
             "group": {
                 "kind": "build",
                 "isDefault": true

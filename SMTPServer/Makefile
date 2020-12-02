@@ -1,12 +1,14 @@
 program_name := $(addprefix $(exe_directory),server) 
-source_dirs  := . ../SMTPShared ../SMTPShared/error ../SMTPShared/logger
+source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger
 version := -std=c99
+
+ldflags := `autoopts-config ldflags`
 
 source_dirs      := $(addprefix ../,$(source_dirs))
 search_wildcards := $(addsuffix /*.c,$(source_dirs))
 
-$(program_name): $(notdir $(patsubst %.c,%.o, $(wildcard $(search_wildcards) ) ) )
-	gcc $(version) $^ -o $@ 
+$(program_name): $(notdir $(patsubst %.c,%.o, $(wildcard $(search_wildcards))))
+	gcc $(version) $^ -o $@ $(ldflags)
 
 VPATH := $(source_dirs) 
 

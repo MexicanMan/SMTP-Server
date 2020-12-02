@@ -13,6 +13,8 @@
 
 #include "pollbuf_dictionary.h"
 
+#include "autogen/server-opts.h"
+
 #include "../SMTPShared/shared_strings.h"
 #include "../SMTPShared/error/error.h"
 #include "../SMTPShared/logger/logger.h"
@@ -157,6 +159,9 @@ int main(int argc, char **argv) {
     struct sockaddr_in addr;       // Адрес сервера
     pollbuf_dictionary *buf_dict;  // Буфер для сообщений от сокетов в poll'е
     int option = 1;                // Option для SO_REUSEADDR
+
+    int optct = optionProcess(&serverOptions, argc, argv);
+    printf("%ld %s %s\n", OPT_VALUE_PORT, OPT_ARG(LOG_DIR), OPT_ARG(MAIL_DIR));
 
     signal(SIGINT, int_handler);
 

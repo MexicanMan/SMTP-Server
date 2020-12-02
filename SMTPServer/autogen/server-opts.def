@@ -1,0 +1,34 @@
+AutoGen Definitions options;
+prog-name     = server;
+prog-title    = "SMTP server";
+long-opts;
+gnu-usage;    /* GNU style preferred to default */
+
+flag = {
+    name      = port;           /* Порт, который слушает сервер */
+    value     = p;              /* Краткий флаг (-p) */
+    arg-type  = number;
+    arg-range = 110;
+    arg-range = "1024->65000";
+    max       = 1;              /* Не более одного раза */
+    min       = 1;              /* Обязательный параметр */
+    descrip   = "Port to bind";
+};
+
+flag = {
+    name      = log_dir;        /* Путь до директории с лог-файлами */
+    value     = l;              /* Краткий флаг (-l) */
+    arg-type  = string;
+    max       = 1;              /* Не более одного раза */
+    min       = 0;              /* Необязательный параметр */
+    descrip   = "Path to the log directory";
+};
+
+flag = {
+    name      = mail_dir;       /* Путь к директории с локальными письмами */
+    value     = d;              /* Краткий флаг (-d) */
+    arg-type  = string;
+    max       = 1;              /* Не более одного раза */
+    min       = 0;              /* Необязательный параметр */
+    descrip   = "Path to the maildir directory";
+};
