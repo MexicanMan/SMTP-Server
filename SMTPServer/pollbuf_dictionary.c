@@ -11,8 +11,10 @@ void dict_free(pollbuf_dictionary** dict) {
         next = curr->next;
         
         poll_socket_buf val = curr->value;
-        if (val.buf)
-            free(val.buf);
+        if (val.inp_buf)
+            free(val.inp_buf);
+        if (val.out_buf)
+            free(val.out_buf);
 
         free(curr);
     }   
@@ -47,6 +49,10 @@ int del_item(pollbuf_dictionary** dict, int key) {
                 *dict = NULL;
             }
             
+            if (ptr->value.inp_buf)
+                free(ptr->value.inp_buf);
+            if (ptr->value.out_buf)
+                free(ptr->value.out_buf);
             free(ptr);
             
             return 0;

@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
  
-#include "../SMTPShared/full_io.h"
+#include "../SMTPShared/shared_strings.h"
 
 #define BUFSIZE 4
 

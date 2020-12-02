@@ -13,7 +13,9 @@
 
 #include "pollbuf_dictionary.h"
 
-#include "../SMTPShared/full_io.h"
+#include "../SMTPShared/shared_strings.h"
+#include "../SMTPShared/error/error.h"
+#include "../SMTPShared/logger/logger.h"
  
 #define BUFSIZE 4       
  
@@ -23,6 +25,9 @@
 
 #define SERVER_PORT 8080  
  
+#define EOT "\n.\n"
+#define EOS '\0'
+
 static volatile int is_running = 1;
 
 /// Обработка сигнала SIGINT
@@ -46,8 +51,10 @@ int add_client(struct pollfd* client_poll_fd, int server_fd, pollbuf_dictionary*
     client_poll_fd->events = POLLIN;
     client_poll_fd->revents = 0;
 
-    client_buf.buf = NULL;
-    client_buf.len = 0;
+    client_buf.inp_buf = NULL;
+    client_buf.out_buf = NULL;
+    client_buf.inp_len = 0;
+    client_buf.out_len = 0;
     if ((buf_update_res = add_item(buf_dict, client_d, client_buf)) < 0)
         return buf_update_res;
  
@@ -56,41 +63,58 @@ int add_client(struct pollfd* client_poll_fd, int server_fd, pollbuf_dictionary*
     return 0;
 }
 
-int send_to_client(int client_fd, char* buf, int len) {
-    int send_len;
+void reset_inp_buf(poll_socket_buf* buf) {
+    free(buf->inp_buf);
+    buf->inp_buf = NULL;
+    buf->inp_len = 0;
+}
 
-    if ((send_len = full_send(client_fd, buf, len, 0)) > 0)
+void reset_out_buf(poll_socket_buf* buf) {
+    free(buf->out_buf);
+    buf->out_buf = NULL;
+    buf->out_len = 0;
+}
+
+
+int send_to_client(int client_fd, pollbuf_dictionary* buf_dict) {
+    int send_len;
+    poll_socket_buf *client_buf = get_item(buf_dict, client_fd);
+
+    if ((send_len = send(client_fd, client_buf->out_buf, client_buf->out_len, 0)) > 0)
         printf("<< Sent back to client %d\n", client_fd);
+
+    if (send_len != client_buf->out_len) {
+        // Смещаем буфер клиента влево на отосланное сообщение и идем сначала
+        client_buf->out_len -= send_len;
+        memcpy(client_buf->out_buf, client_buf->out_buf+send_len, 
+            sizeof(char) * client_buf->out_len);
+    } else {
+        reset_out_buf(client_buf);
+    }
 
     return send_len;
 }
 
-void reset_buf(poll_socket_buf* buf) {
-    free(buf->buf);
-    buf->buf = NULL;
-    buf->len = 0;
-}
-
 int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
     char buf[BUFSIZE]; 
-    int len; 
+    int len;
     poll_socket_buf *client_buf = get_item(buf_dict, client_fd);
 
     len = recv(client_fd, buf, BUFSIZE, 0);
     if (len > 0) {
-        int concat_res = concat_dynamic_strings(&client_buf->buf, buf, client_buf->len, len);
+        int concat_res = concat_dynamic_strings(&client_buf->inp_buf, buf, client_buf->inp_len, len);
         if (concat_res < 0)
             return concat_res;
-        client_buf->len += len;
+        client_buf->inp_len += len;
 
         // Итерируемся по всему прочитанному и ищем флаги конца передачи
-        for (int i = 0; i < client_buf->len-2; i++) {
-            if (client_buf->buf[i] == EOT[0] && client_buf->buf[i+1] == EOT[1] 
-                && client_buf->buf[i+2] == EOT[2]) {
+        for (int i = 0; i < client_buf->inp_len-2; i++) {
+            if (client_buf->inp_buf[i] == EOT[0] && client_buf->inp_buf[i+1] == EOT[1] 
+                && client_buf->inp_buf[i+2] == EOT[2]) {
                 // Как только нашли флаг конца передачи, вырезаем сообщение
                 int message_end_index = i+2;
 
-                char *message = client_buf->buf;
+                char *message = client_buf->inp_buf;
                 message[message_end_index] = '\0';
 
                 printf("\n>> Recieved \"%s\" from %d\n", message, client_fd);
@@ -98,17 +122,18 @@ int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
                 message[message_end_index] = EOT[2];
 
                 int msg_len = message_end_index + 1;
-                send_to_client(client_fd, message, msg_len);
+                concat_dynamic_strings(&client_buf->out_buf, client_buf->inp_buf, client_buf->out_len, msg_len);
+                client_buf->out_len += msg_len;
 
-                if (msg_len != client_buf->len) {
+                if (msg_len != client_buf->inp_len) {
                     // Смещаем буфер клиента влево на прочитанное сообщение и идем сначала
-                    client_buf->len -= msg_len;
-                    memcpy(client_buf->buf, client_buf->buf+msg_len, 
-                        sizeof(char) * client_buf->len);
+                    client_buf->inp_len -= msg_len;
+                    memcpy(client_buf->inp_buf, client_buf->inp_buf+msg_len, 
+                        sizeof(char) * client_buf->inp_len);
 
                     i = -1;
                 } else {
-                    reset_buf(client_buf);
+                    reset_inp_buf(client_buf);
                 }
             }
         }
@@ -117,35 +142,35 @@ int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
 
         close(client_fd);
 
-        if (client_buf->buf) {
-            reset_buf(client_buf);
+        if (client_buf->inp_buf) {
+            reset_inp_buf(client_buf);
         }
     }
 
     return len;
 }
 
-int main() {
+int main(int argc, char **argv) {
     int sock_d;                    // Файловый дескриптор сокета сервера
     int fd_max = 0;                // Максимальный номер дескриптора в буфере
     struct pollfd fds[POLL_SIZE];  // Буфер poll'а
     struct sockaddr_in addr;       // Адрес сервера
     pollbuf_dictionary *buf_dict;  // Буфер для сообщений от сокетов в poll'е
     int option = 1;                // Option для SO_REUSEADDR
- 
+
     signal(SIGINT, int_handler);
 
-    printf("Starting server...\n");
+    logger_t* logger = logger_init(".", argv[0], FILE_PRINT | CONSOLE_PRINT);
+    if (!logger)
+        exit_on_error("logger_init");
+
+    logger_log(logger, INFO_LOG, "Starting server...");
  
-    if ((sock_d = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket");
-        exit(1);
-    }
+    if ((sock_d = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+        exit_on_error("socket");
  
-    if (setsockopt(sock_d, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) {
-        perror("setsockopt");
-        exit(1);
-    }
+    if (setsockopt(sock_d, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) 
+        exit_on_error("setsockopt");
  
     fds[POLL_SERVER_IND].fd = sock_d;
     fds[POLL_SERVER_IND].events = POLLIN;
@@ -156,17 +181,13 @@ int main() {
     addr.sin_addr.s_addr = inet_addr("0.0.0.0");
     addr.sin_port = htons(SERVER_PORT);
  
-    if (bind(sock_d, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
-        perror("bind");
-        exit(1);
-    }
+    if (bind(sock_d, (struct sockaddr*) &addr, sizeof(addr)) < 0)
+        exit_on_error("bind");
   
-    if (listen(sock_d, SOMAXCONN) < 0) {
-        perror("listen");
-        exit(1);
-    };
+    if (listen(sock_d, SOMAXCONN) < 0)
+        exit_on_error("listen");
 
-    printf("Server listening --- press Ctrl-C to stop\n");
+    logger_log(logger, INFO_LOG, "Server listening --- press Ctrl-C to stop");
     while (is_running) {
         int poll_res = poll(fds, fd_max + 1, POLL_WAIT);  // Отдельный канал для сигинта добавить
  
@@ -204,10 +225,16 @@ int main() {
                     }
                 }
             }
+
+            for (pollbuf_dictionary* i = buf_dict; i != NULL; i = i->next) {
+                if (i->value.out_len > 0) {
+                    send_to_client(i->key, buf_dict);
+                }
+            }
         }
     }
  
-    printf("Closing all connections...\n");
+    logger_log(logger, INFO_LOG, "Closing all connections...");
     for (int i = POLL_SERVER_IND + 1; i <= fd_max; i++) {
         close(fds[i].fd);
     }
@@ -215,8 +242,10 @@ int main() {
     dict_free(&buf_dict);
 
     close(sock_d);
- 
-    printf("Server stopped\n");
+
+    logger_log(logger, INFO_LOG, "Server stopped");
+
+    logger_free(logger);
  
     return 0;
 }

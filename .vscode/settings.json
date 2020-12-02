@@ -1,2 +1,7 @@
 {
+    "files.associations": {
+        "shared_strings.h": "c",
+        "system_error": "c",
+        "error.h": "c"
+    }
 }

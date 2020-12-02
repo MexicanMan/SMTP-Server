@@ -3,14 +3,21 @@
         {
             "name": "Linux",
             "includePath": [
+                "/usr/lib/gcc/x86_64-linux-gnu/9/include",
+                "/usr/local/include",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include",
                 "${workspaceFolder}/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "gnu18",
-            "cppStandard": "gnu++14",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
             "intelliSenseMode": "gcc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerArgs": [
+                "-D"
+            ]
         }
     ],
     "version": 4

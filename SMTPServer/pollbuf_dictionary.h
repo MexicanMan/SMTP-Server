@@ -2,8 +2,10 @@
 #define POLLBUF_DICTIONARY_H
 
 typedef struct poll_socket_buf_struct {
-    char* buf;
-    int len;
+    char* inp_buf;
+    char* out_buf;
+    int inp_len;
+    int out_len;
 } poll_socket_buf;
 
 typedef struct pollbuf_dict_struct {
