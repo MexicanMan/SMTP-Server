@@ -11,7 +11,7 @@
 
 #define TIME_STR_SIZE 9
 #define DATE_STR_SIZE 11
-#define MIN_TYPE_STR_SIZE 5
+#define MIN_TYPE_STR_SIZE 6
 
 void logger_listener_proc(pid_t pid, const char* log_dir, const char* prog_name, unsigned const char logger_options);
 logger_t* logger_sender_proc(const char* prog_name, unsigned const char logger_options);
