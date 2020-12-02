@@ -56,7 +56,6 @@ build
 CMakeFiles
 *.cmake
 CMakeCache.txt
-Makefile
 
 # Binaries 
 client
