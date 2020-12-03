@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "pollbuf_dictionary.h"
 
@@ -22,7 +23,7 @@
 #define BUFSIZE 4       
  
 #define POLL_SIZE 1024     
-#define POLL_SERVER_IND 0  
+#define POLL_SERVER_IND 1  
 #define POLL_WAIT 1000  
 
 #define SERVER_PORT 8080  
@@ -30,12 +31,12 @@
 #define EOT "\n.\n"
 #define EOS '\0'
 
-static volatile int is_running = 1;
+static int pfd[2];    
 
 /// Обработка сигнала SIGINT
 void int_handler(int dummy) {
-    is_running = 0;
-    printf("\n");
+    if (write(pfd[1], "c", 1) == -1)
+        exit_on_error("write");
 }
 
 int add_client(struct pollfd* client_poll_fd, int server_fd, pollbuf_dictionary** buf_dict) {
@@ -154,22 +155,28 @@ int serve_client(int client_fd, pollbuf_dictionary* buf_dict) {
 
 int main(int argc, char **argv) {
     int sock_d;                    // Файловый дескриптор сокета сервера
-    int fd_max = 0;                // Максимальный номер дескриптора в буфере
+    int fd_max = 1;                // Максимальный номер дескриптора в буфере
     struct pollfd fds[POLL_SIZE];  // Буфер poll'а
     struct sockaddr_in addr;       // Адрес сервера
     pollbuf_dictionary *buf_dict;  // Буфер для сообщений от сокетов в poll'е
     int option = 1;                // Option для SO_REUSEADDR
+    int is_running = 1;
 
     int optct = optionProcess(&serverOptions, argc, argv);
     printf("%ld %s %s\n", OPT_VALUE_PORT, OPT_ARG(LOG_DIR), OPT_ARG(MAIL_DIR));
 
+    if (pipe2(pfd, O_NONBLOCK) == -1)
+        exit_on_error("pipe");
+    
     signal(SIGINT, int_handler);
+    signal(SIGTERM, int_handler);
 
-    logger_t* logger = logger_init(".", argv[0], FILE_PRINT | CONSOLE_PRINT);
-    if (!logger)
+    logger_t* logger = logger_init(".", argv[0], CONSOLE_PRINT);
+    if (!logger) 
         exit_on_error("logger_init");
 
-    logger_log(logger, INFO_LOG, "Starting server...");
+    if (logger_log(logger, INFO_LOG, "Starting server...") < 0)
+        warning_on_error("logger_log");
  
     if ((sock_d = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
         exit_on_error("socket");
@@ -177,6 +184,10 @@ int main(int argc, char **argv) {
     if (setsockopt(sock_d, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) 
         exit_on_error("setsockopt");
  
+    fds[0].fd = pfd[0];
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+
     fds[POLL_SERVER_IND].fd = sock_d;
     fds[POLL_SERVER_IND].events = POLLIN;
     fds[POLL_SERVER_IND].revents = 0;
@@ -192,54 +203,61 @@ int main(int argc, char **argv) {
     if (listen(sock_d, SOMAXCONN) < 0)
         exit_on_error("listen");
 
-    logger_log(logger, INFO_LOG, "Server listening --- press Ctrl-C to stop");
+    if (logger_log(logger, INFO_LOG, "Server listening --- press Ctrl-C to stop") < 0)
+        warning_on_error("logger_log");
     while (is_running) {
-        int poll_res = poll(fds, fd_max + 1, POLL_WAIT);  // Отдельный канал для сигинта добавить
+        int poll_res = poll(fds, fd_max + 1, POLL_WAIT); 
  
         if (poll_res < -1) {
-            perror("poll");
+            warning_on_error("poll");
         } else if (poll_res > 0) {
-            if (fds[POLL_SERVER_IND].revents & POLLIN) {
-                fds[POLL_SERVER_IND].revents = 0;
- 
-                fd_max++;
-                if (add_client(fds+fd_max, fds[POLL_SERVER_IND].fd, &buf_dict) < 0) {
-                    perror("add_client");
-                    break;
-                }
-            }
-
-            for (int i = POLL_SERVER_IND + 1; i <= fd_max; i++) {
-                if (fds[i].revents & POLLIN) {
-                    fds[i].revents = 0;
-
-                    int res = serve_client(fds[i].fd, buf_dict);
-
-                    // Сдвигаем влево буфер poll'а если клиент удалился
-                    // и удаляем запись в таблице буферов сообщений клиентов
-                    if (res == 0) {
-                        del_item(&buf_dict, fds[i].fd);
-
-                        if (i < fd_max)
-                            memcpy(fds+i, fds+i+1, sizeof(struct pollfd) * (fd_max - i));
-                        fd_max--;
-                    } else if (res < 0) {
-                        perror("serve_client");
-                        is_running = 0;
+            if (fds[0].revents & POLLIN) {
+                fds[0].revents = 0;
+                is_running = 0;
+            } else {
+                if (fds[POLL_SERVER_IND].revents & POLLIN) {
+                    fds[POLL_SERVER_IND].revents = 0;
+    
+                    fd_max++;
+                    if (add_client(fds+fd_max, fds[POLL_SERVER_IND].fd, &buf_dict) < 0) {
+                        warning_on_error("add_client");
                         break;
                     }
                 }
-            }
 
-            for (pollbuf_dictionary* i = buf_dict; i != NULL; i = i->next) {
-                if (i->value.out_len > 0) {
-                    send_to_client(i->key, buf_dict);
+                for (int i = POLL_SERVER_IND + 1; i <= fd_max; i++) {
+                    if (fds[i].revents & POLLIN) {
+                        fds[i].revents = 0;
+
+                        int res = serve_client(fds[i].fd, buf_dict);
+
+                        // Сдвигаем влево буфер poll'а если клиент удалился
+                        // и удаляем запись в таблице буферов сообщений клиентов
+                        if (res == 0) {
+                            del_item(&buf_dict, fds[i].fd);
+
+                            if (i < fd_max)
+                                memcpy(fds+i, fds+i+1, sizeof(struct pollfd) * (fd_max - i));
+                            fd_max--;
+                        } else if (res < 0) {
+                            warning_on_error("serve_client");
+                            is_running = 0;
+                            break;
+                        }
+                    }
+                }
+
+                for (pollbuf_dictionary* i = buf_dict; i != NULL; i = i->next) {
+                    if (i->value.out_len > 0) {
+                        send_to_client(i->key, buf_dict);
+                    }
                 }
             }
         }
     }
  
-    logger_log(logger, INFO_LOG, "Closing all connections...");
+    if (logger_log(logger, INFO_LOG, "Closing all connections...") < 0)
+        warning_on_error("logger_log");
     for (int i = POLL_SERVER_IND + 1; i <= fd_max; i++) {
         close(fds[i].fd);
     }
@@ -248,7 +266,11 @@ int main(int argc, char **argv) {
 
     close(sock_d);
 
-    logger_log(logger, INFO_LOG, "Server stopped");
+    close(pfd[0]);
+    close(pfd[1]);
+
+    if (logger_log(logger, INFO_LOG, "Server stopped") < 0)
+        warning_on_error("logger_log");
 
     logger_free(logger);
  

@@ -30,9 +30,14 @@ typedef struct logger_struct {
     unsigned char options;
 } logger_t;
 
+typedef struct log_msg_payload_struct {
+    log_msg_type_t type;
+    char text[LOG_TEXT_LEN];
+} log_msg_payload;
+
 typedef struct log_msg_struct {
     long msg_type;
-    char msg_text[LOG_TEXT_LEN];
+    log_msg_payload msg_payload;
 } log_msg_t;
 
 logger_t* logger_init(const char* log_dir, const char* prog_name, unsigned const char logger_options);
