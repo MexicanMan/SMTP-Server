@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
@@ -15,7 +14,7 @@
 
 void logger_listener_proc(const char* log_dir, int mq_id, unsigned const char logger_options);
 logger_t* logger_sender_proc(int mq_id, unsigned const char logger_options);
-int logger_init_mq(const char* prog_name);
+int logger_init_mq();
 int logger_open_file(logger_t* logger, const char* log_dir);
 int logger_main(logger_t logger);
 void logger_finalize(logger_t* logger);
@@ -27,18 +26,17 @@ void get_log_msg_type(char* type_buf, int len, log_msg_type_t type);
 /**
  * @brief  Logger initialization   
  * @param  log_dir: Directory for log files
- * @param  prog_name: Name of currently running program
  * @param  logger_options: Options for logger
  * @retval Logger for sending messages or NULL in case of error
  */
-logger_t* logger_init(const char* log_dir, const char* prog_name, unsigned const char logger_options) {
+logger_t* logger_init(const char* log_dir, unsigned const char logger_options) {
     pid_t pid;
 
     #ifdef DEBUG
         printf("Logger: Starting initialization\n");
     #endif
 
-    int mq_id = logger_init_mq(prog_name);
+    int mq_id = logger_init_mq();
     if (mq_id < 0)
         return NULL;
 
@@ -79,8 +77,10 @@ int logger_log(logger_t* logger_sender, log_msg_type_t type, const char* message
     log_msg.msg_payload.type = type;
     snprintf(log_msg.msg_payload.text, LOG_TEXT_LEN, "%s", message);
 
-    if (msgsnd(logger_sender->mq_id, &log_msg, sizeof(log_msg.msg_payload), 0) < 0) 
+    if (msgsnd(logger_sender->mq_id, &log_msg, sizeof(log_msg.msg_payload), 0) < 0) {
+        warn_on_error("logger_log");
         return -1;
+    }
 
     return 0;
 }
@@ -90,7 +90,7 @@ int logger_log(logger_t* logger_sender, log_msg_type_t type, const char* message
  */
 void logger_free(logger_t* logger_sender) {
     if (logger_log(logger_sender, INFO_LOG, LOG_MSG_CLOSE) < 0)
-        warning_on_error("logger_free msgsnd");
+        warn_on_error("logger_free msgsnd");
 
     free(logger_sender);
 }
@@ -105,13 +105,15 @@ void logger_listener_proc(const char* log_dir, int mq_id, unsigned const char lo
     logger_listener.mq_id = mq_id;
     logger_listener.options = logger_options;
 
-    if (logger_open_file(&logger_listener, log_dir) < 0) {
-        logger_finalize(&logger_listener);
-        exit_on_error("logger_open_file");
+    if (logger_options & FILE_PRINT){
+        if (logger_open_file(&logger_listener, log_dir) < 0) {
+            logger_finalize(&logger_listener);
+            exit_on_error("logger_open_file");
+        }
     }
 
     if (logger_main(logger_listener) < 0) {
-        warning_on_error("logger_main");
+        warn_on_error("logger_main");
     }
 
     logger_finalize(&logger_listener);
@@ -153,19 +155,14 @@ logger_t* logger_sender_proc(int mq_id, unsigned const char logger_options) {
 
 /**
  * @brief  Initialization of message queue for logger
- * @param  prog_name: Name of currently running program
  */
-int logger_init_mq(const char* prog_name)
+int logger_init_mq()
 {
     #ifdef DEBUG
         printf("Logger: Initializing message queue..\n");
     #endif
 
-    key_t key;
-    if ((key = ftok(prog_name, 65)) < 0)
-        return key;
-
-    int mq_id = msgget(key, 0666 | IPC_CREAT);
+    int mq_id = msgget(IPC_PRIVATE, 0666);
 
     return mq_id;
 }
@@ -179,7 +176,7 @@ int logger_init_mq(const char* prog_name)
 void get_log_msg_type(char* type_buf, int len, log_msg_type_t type) {
     if (len < MIN_TYPE_STR_SIZE) {  // assert?
         errno = EINVAL;
-        warning_on_error("get_log_msg_type");
+        warn_on_error("get_log_msg_type");
     }
 
     switch (type) {
@@ -209,7 +206,7 @@ void get_log_time(char* time_buf, int len)
 {
     if (len != TIME_STR_SIZE) {  // assert?
         errno = EINVAL;
-        warning_on_error("get_log_time");
+        warn_on_error("get_log_time");
     }
 
     time_t curr_time = time(NULL);
@@ -227,7 +224,7 @@ void get_log_date(char* date_buf, int len)
 {
     if (len != DATE_STR_SIZE) {  // assert?
         errno = EINVAL;
-        warning_on_error("get_log_date");
+        warn_on_error("get_log_date");
     }
 
     time_t curr_time = time(NULL);
@@ -315,7 +312,7 @@ int logger_main(logger_t logger)
     int is_logger_running = 1;
     while (is_logger_running) {
         if (msgrcv(logger.mq_id, &log_msg, log_msg_sz, SYSTEM, MSG_EXCEPT) < 0) {
-            warning_on_error("logger_main msgrcv");
+            warn_on_error("logger_main msgrcv");
             is_logger_running = 0;
         }
 

@@ -9,6 +9,6 @@ void exit_on_error(const char* error_text) {
     exit(errno);
 }
 
-void warning_on_error(const char* warning_text) {
+void warn_on_error(const char* warning_text) {
     perror(warning_text);
 }

@@ -2,6 +2,7 @@
 #define LOGGER_H
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define LOG_FILENAME_LEN 50
 #define LOG_TEXT_LEN 200
@@ -13,7 +14,7 @@
 #define FILE_PRINT 0x01
 #define  CONSOLE_PRINT 0x02
 
-typedef enum {
+typedef enum log_msg_type_enum {
     DEBUG_LOG = 1,
     INFO_LOG = 2,
     WARNING_LOG = 3,
@@ -33,14 +34,14 @@ typedef struct logger_struct {
 typedef struct log_msg_payload_struct {
     log_msg_type_t type;
     char text[LOG_TEXT_LEN];
-} log_msg_payload;
+} log_msg_payload_t;
 
 typedef struct log_msg_struct {
     long msg_type;
-    log_msg_payload msg_payload;
+    log_msg_payload_t msg_payload;
 } log_msg_t;
 
-logger_t* logger_init(const char* log_dir, const char* prog_name, unsigned const char logger_options);
+logger_t* logger_init(const char* log_dir, unsigned const char logger_options);
 int logger_log(logger_t* logger_sender, log_msg_type_t type, const char* message);
 void logger_free(logger_t* logger_sender);
 

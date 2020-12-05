@@ -4,6 +4,6 @@
 #include <errno.h>
 
 void exit_on_error(const char* error_text);
-void warning_on_error(const char* warning_text);
+void warn_on_error(const char* warning_text);
 
 #endif
