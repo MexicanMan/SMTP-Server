@@ -19,7 +19,7 @@ typedef enum log_msg_type_enum {
     INFO_LOG = 2,
     WARNING_LOG = 3,
     ERROR_LOG = 4,
-    SYSTEM = 100,  // System messages only like ready (Not logged)
+    SYSTEM = 100,  // System messages only, like ready (Not logged)
 } log_msg_type_t;
 
 typedef struct logger_struct {

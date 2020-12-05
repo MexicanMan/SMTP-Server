@@ -59,7 +59,7 @@ int server_main(server_t* server) {
 
     int is_running = 1;
     while (is_running) {
-        int poll_res = poll(server->fds, server->fd_max + 1, POLL_WAIT); 
+        int poll_res = poll(server->fds, server->fd_max, POLL_WAIT); 
 
         if (poll_res < -1) {
             logger_log(server->logger, WARNING_LOG, "server_main poll");
@@ -68,7 +68,23 @@ int server_main(server_t* server) {
                 server->fds[POLL_PIPEFD_IND].revents = 0;
                 is_running = 0;
             } else {
-                
+                if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
+                    server->fds[POLL_SERVER_IND].revents = 0;
+    
+                    // ...
+                }
+
+                for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+                    if (server->fds[i].revents & POLLIN) {
+                        // ...
+                    }
+
+                    if (server->fds[i].revents & POLLOUT) {
+                        // ...
+                    }
+
+                    server->fds[i].revents = 0;
+                }
             }
         }
     }
@@ -83,7 +99,7 @@ int server_main(server_t* server) {
  */
 void server_finalize(server_t* server) {
     logger_log(server->logger, INFO_LOG, "Closing all connections...");
-    for (int i = POLL_CLIENTS_IND; i <= server->fd_max; i++) {
+    for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
         close(server->fds[i].fd);
     }
 

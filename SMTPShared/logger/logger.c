@@ -40,9 +40,7 @@ logger_t* logger_init(const char* log_dir, unsigned const char logger_options) {
     if (mq_id < 0)
         return NULL;
 
-    if ((pid = fork()) < 0) {
-        return NULL;
-    } else if (pid == 0) {
+    if ((pid = fork()) == 0) {
         signal(SIGINT, SIG_IGN);
 
         #ifdef DEBUG
@@ -61,7 +59,7 @@ logger_t* logger_init(const char* log_dir, unsigned const char logger_options) {
         return logger_sender;
     }
 
-    return NULL; // assert?    
+    return NULL;  
 }
 
 /**

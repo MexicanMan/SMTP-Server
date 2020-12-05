@@ -16,7 +16,9 @@
             "intelliSenseMode": "gcc-x64",
             "configurationProvider": "ms-vscode.cmake-tools",
             "compilerArgs": [
-                "-D_GNU_SOURCE"
+                "-D_GNU_SOURCE",
+                "-Wall",
+                "-pedantic"
             ]
         }
     ],

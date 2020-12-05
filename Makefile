@@ -5,7 +5,7 @@ build_dir := build
 exe_directory := exe_directory="../../"
 compile_flags := compile_flags="-g -g3 -O0 -D_GNU_SOURCE -DDEBUG"
 
-ifeq ($(build),release)
+ifeq ($(build_type),release)
 	compile_flags := compile_flags="-O3 -D_GNU_SOURCE"
 endif
 
