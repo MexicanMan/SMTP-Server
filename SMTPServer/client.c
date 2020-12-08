@@ -2,15 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pollbuf_dictionary.h"
+#include "client.h"
 
-void dict_free(pollbuf_dictionary** dict) {
-    pollbuf_dictionary *curr, *next;
+void client_dict_free(server_client_dict_t** dict) {
+    server_client_dict_t *curr, *next;
 
     for (curr = *dict; curr != NULL; curr = next) {
         next = curr->next;
         
-        poll_socket_buf val = curr->value;
+        server_client_t val = curr->value;
         if (val.inp_buf)
             free(val.inp_buf);
         if (val.out_buf)
@@ -20,8 +20,8 @@ void dict_free(pollbuf_dictionary** dict) {
     }   
 }
 
-poll_socket_buf* get_item(pollbuf_dictionary* dict, int key) {
-    pollbuf_dictionary *ptr;
+server_client_t* get_item(server_client_dict_t* dict, int key) {
+    server_client_dict_t *ptr;
 
     for (ptr = dict; ptr != NULL; ptr = ptr->next) {
         if (ptr->key == key) {
@@ -32,8 +32,8 @@ poll_socket_buf* get_item(pollbuf_dictionary* dict, int key) {
     return NULL;
 }
 
-int del_item(pollbuf_dictionary** dict, int key) {
-    pollbuf_dictionary *ptr, *prev;
+int del_item(server_client_dict_t** dict, int key) {
+    server_client_dict_t *ptr, *prev;
 
     for (ptr = *dict, prev = NULL; ptr != NULL; prev = ptr, ptr = ptr->next) {
         if (ptr->key == key) {
@@ -62,11 +62,11 @@ int del_item(pollbuf_dictionary** dict, int key) {
     return -1;
 }
 
-int add_item(pollbuf_dictionary** dict, int key, poll_socket_buf value) {
+int add_item(server_client_dict_t** dict, int key, server_client_t value) {
     if (get_item(*dict, key) != NULL)
         return -1;
 
-    pollbuf_dictionary *new_dict_head = (pollbuf_dictionary*) malloc(sizeof(struct pollbuf_dict_struct));
+    server_client_dict_t *new_dict_head = (server_client_dict_t*) malloc(sizeof(server_client_dict_t));
     if (!new_dict_head)
         return -2;
 

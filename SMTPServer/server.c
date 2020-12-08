@@ -7,10 +7,14 @@
 
 #include "server.h"
 
+#include "autogen/server-fsm.h"
+
 #define POLL_WAIT 1000
+#define READBUF_SIZE 20
 
 int server_create_and_biding(int port);
-void server_fill_pollfd(server_t* server, int fd, int ind);
+int server_add_client(server_t* server);
+int server_serve_client(server_t* server, int client_ind);
 
 /**
  * @brief Initialize smtp server
@@ -42,6 +46,7 @@ server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit
     server->fd_max = 0;
     server_fill_pollfd(server, sock_d, POLL_SERVER_IND);
     server_fill_pollfd(server, exit_pipefd, POLL_PIPEFD_IND);
+    server->clients = NULL;
 
     return server;
 }
@@ -71,12 +76,19 @@ int server_main(server_t* server) {
                 if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
                     server->fds[POLL_SERVER_IND].revents = 0;
     
-                    // ...
+                    if (server_add_client(server) < 0) {
+                        logger_log(server->logger, ERROR_LOG, "server_main server_add_client");
+                        break;
+                    }
                 }
 
                 for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
                     if (server->fds[i].revents & POLLIN) {
-                        // ...
+                        if (server_serve_client(server, i) < 0) {
+                            logger_log(server->logger, ERROR_LOG, "server_main server_serve_client");
+                            is_running = 0;
+                            break;
+                        }
                     }
 
                     if (server->fds[i].revents & POLLOUT) {
@@ -104,6 +116,8 @@ void server_finalize(server_t* server) {
     }
 
     close(server->fds[POLL_SERVER_IND].fd);
+
+    client_dict_free(&server->clients);
 
     logger_log(server->logger, INFO_LOG, "Server stopped");
 
@@ -148,4 +162,43 @@ void server_fill_pollfd(server_t* server, int fd, int ind) {
     server->fds[ind].revents = 0;
 
     server->fd_max++;
+}
+
+int server_add_client(server_t* server) {
+    logger_log(server->logger, INFO_LOG, "Accepting new client");
+
+    int client_d = accept(server->fds[POLL_SERVER_IND].fd, NULL, 0);
+    if (client_d < 0) {
+        logger_log(server->logger, ERROR_LOG, "server_add_client accept");
+        return client_d;
+    }
+
+    int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, 0, server);
+    if (new_state == SERVER_FSM_ST_INVALID) {
+        logger_log(server->logger, ERROR_LOG, "server_add_client server_fsm_step");
+        return -1;
+    }
+
+    logger_log(server->logger, INFO_LOG, "Accepted new client");
+
+    return 0;
+}
+
+int server_serve_client(server_t* server, int client_ind) {
+    char buf[READBUF_SIZE]; 
+
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_item(server->clients, client_d);
+
+    int len = recv(client_d, buf, READBUF_SIZE, 0);
+    if (len > 0) {
+        // tmp
+        buf[len] = '\0';
+        printf("%s", buf);
+        // ...
+    } else if (len == 0) {
+        server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_d, client_ind, server);
+    }
+
+    return len;
 }

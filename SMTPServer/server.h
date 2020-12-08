@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "client.h"
+
 #include "../SMTPShared/logger/logger.h"
 
 #define POLL_SIZE 1024     
@@ -17,10 +19,14 @@ typedef struct server_struct {
 
     int fd_max;                     // Maximum descriptor number in buffer
     struct pollfd fds[POLL_SIZE];   // Poll buffer
+
+    server_client_dict_t* clients;   // Clients list 
 } server_t;
 
 server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit_pipefd);
 int server_main(server_t* server);
 void server_finalize(server_t* server);
+
+void server_fill_pollfd(server_t* server, int fd, int ind);
 
 #endif

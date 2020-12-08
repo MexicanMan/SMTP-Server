@@ -44,6 +44,8 @@
  */
 /* START === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 #include <stdlib.h>
+
+#include "../fsm_handlers.h"
 /* END   === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
 #ifndef NULL
@@ -87,8 +89,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -105,8 +107,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_CLOSED, SERVER_FSM_TR_CLOSE }   /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_CLOSED, SERVER_FSM_TR_CLOSE }   /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -123,8 +125,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -141,8 +143,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -159,8 +161,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -177,8 +179,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -195,8 +197,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   },
 
 
@@ -213,8 +215,8 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_DATA */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_SAVED */
-    { SERVER_FSM_ST_READY, SERVER_FSM_TR_ACCEPTED }, /* EVT:  CONN_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONN_LOST */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
+    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID } /* EVT:  CONNECTION_LOST */
   }
 };
 
@@ -224,7 +226,7 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
 #define Server_FsmStInit_off     83
 
 
-static char const zServer_FsmStrings[311] =
+static char const zServer_FsmStrings[323] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -248,14 +250,14 @@ static char const zServer_FsmStrings[311] =
 /*   257 */ "mail_end\0"
 /*   266 */ "mail_data\0"
 /*   276 */ "mail_saved\0"
-/*   287 */ "conn_accepted\0"
-/*   301 */ "conn_lost";
+/*   287 */ "connection_accepted\0"
+/*   307 */ "connection_lost";
 
 static const size_t aszServer_FsmStates[8] = {
     83,  88,  94,  106, 121, 131, 148, 160 };
 
 static const size_t aszServer_FsmEvents[15] = {
-    167, 177, 187, 197, 207, 217, 227, 237, 247, 257, 266, 276, 287, 301, 75 };
+    167, 177, 187, 197, 207, 217, 227, 237, 247, 257, 266, 276, 287, 307, 75 };
 
 
 #define SERVER_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 15) \
@@ -294,10 +296,9 @@ te_server_fsm_state
 server_fsm_step(
     te_server_fsm_state server_fsm_state,
     te_server_fsm_event trans_evt,
-    int client_socket_fd,
-    char*** matchdata,
-    int matchdatalen,
-    int** matchdatasizes )
+    int client_d,
+    int client_ind,
+    void* server )
 {
     te_server_fsm_state nxtSt;
     te_server_fsm_trans trans;
@@ -323,28 +324,32 @@ server_fsm_step(
     switch (trans) {
     case SERVER_FSM_TR_ACCEPTED:
         /* START == ACCEPTED == DO NOT CHANGE THIS COMMENT */
-        //nxtSt = HANDLE_ACCEPTED();
+        // ?????????? ???? ?????????????
+        nxtSt = HANDLE_ACCEPTED(server, client_d, nxtSt);
         /* END   == ACCEPTED == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case SERVER_FSM_TR_CLOSE:
         /* START == CLOSE == DO NOT CHANGE THIS COMMENT */
-        //nxtSt = HANDLE_CLOSE();
+        nxtSt = HANDLE_CLOSE(server, client_d, client_ind, nxtSt);
         /* END   == CLOSE == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case SERVER_FSM_TR_INVALID:
         /* START == INVALID == DO NOT CHANGE THIS COMMENT */
-        exit(server_fsm_invalid_transition(server_fsm_state, trans_evt));
+        // ???????????????? ?????????????????? ???????????? ?? ?????????????? ???? ???? ????????????
+        nxtSt = SERVER_FSM_ST_INVALID;
+        //exit(server_fsm_invalid_transition(server_fsm_state, trans_evt));
         /* END   == INVALID == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     default:
         /* START == BROKEN MACHINE == DO NOT CHANGE THIS COMMENT */
-        exit(server_fsm_invalid_transition(server_fsm_state, trans_evt));
+         nxtSt = SERVER_FSM_ST_INVALID;
+         server_fsm_invalid_transition(server_fsm_state, trans_evt);
         /* END   == BROKEN MACHINE == DO NOT CHANGE THIS COMMENT */
     }
 

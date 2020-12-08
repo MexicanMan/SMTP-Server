@@ -5,19 +5,18 @@ type   = reentrant;
 
 prefix = server_fsm;
 
-cookie = "int client_socket_fd";
-cookie = "char*** matchdata";
-cookie = "int matchdatalen";
-cookie = "int** matchdatasizes";
+cookie = "int client_d";
+cookie = "int client_ind";
+cookie = "void* server";
 
 /* Состояния init и done уже есть */
 state  = ready, need_sender, need_recipient, need_data, waiting_for_data, saving_mail, closed;
 event  = cmnd_noop, cmnd_helo, cmnd_ehlo, cmnd_mail, cmnd_rcpt, cmnd_vrfy, cmnd_data, cmnd_rset,
-    cmnd_quit, mail_end, mail_data, mail_saved, conn_accepted, conn_lost;
+    cmnd_quit, mail_end, mail_data, mail_saved, connection_accepted, connection_lost;
 
 transition =
-{ tst  = '*';           tev = conn_accepted;        next = ready;       ttype = accepted; };
+{ tst  = init;          tev = connection_accepted;        next = ready;       ttype = accepted; };
 
 transition =
-{ tst  = ready;         tev = conn_lost;            next = closed;      ttype = close; };
+{ tst  = ready;         tev = connection_lost;            next = closed;      ttype = close; };
 

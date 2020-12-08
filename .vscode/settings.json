@@ -3,6 +3,8 @@
         "shared_strings.h": "c",
         "system_error": "c",
         "error.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "fsm_handlers.h": "c",
+        "client.h": "c"
     }
 }
