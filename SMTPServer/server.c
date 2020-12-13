@@ -15,6 +15,7 @@
 int server_create_and_biding(int port);
 int server_add_client(server_t* server);
 int server_serve_client(server_t* server, int client_ind);
+int server_send_client(server_t* server, int client_ind);
 
 /**
  * @brief Initialize smtp server
@@ -92,7 +93,11 @@ int server_main(server_t* server) {
                     }
 
                     if (server->fds[i].revents & POLLOUT) {
-                        // ...
+                        if (server_send_client(server, i) < 0) {
+                            logger_log(server->logger, ERROR_LOG, "server_main server_send_client");
+                            is_running = 0;
+                            break;
+                        }
                     }
 
                     server->fds[i].revents = 0;
@@ -201,4 +206,24 @@ int server_serve_client(server_t* server, int client_ind) {
     }
 
     return len;
+}
+
+int server_send_client(server_t* server, int client_ind) {
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_item(server->clients, client_d);
+
+    int send_len = send(client_d, client->out_buf, client->out_len, 0);
+    if (send_len != client->out_len) {
+        // Смещаем буфер клиента влево на отосланное сообщение и идем сначала
+        client->out_len -= send_len;
+        memcpy(client->out_buf, client->out_buf + send_len, sizeof(char) * client->out_len);
+    } else {
+        free(client->out_buf);
+        client->out_buf = NULL;
+        client->out_len = 0;
+
+        server->fds[client_ind].events = POLLIN;
+    }
+
+    return send_len;
 }
