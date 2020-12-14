@@ -8,17 +8,31 @@ prefix = server_fsm;
 cookie = "int client";
 cookie = "void* server";
 
-/* Состояния init и done уже есть */
-state  = ready, need_sender, need_recipient, need_data, waiting_for_data, saving_mail, quit;
-event  = cmd_helo, cmd_ehlo, cmd_mail, cmd_rcpt, cmd_data, cmd_rset, cmd_vrfy,
-    cmd_quit, mail_end, mail_data, mail_saved, connection_accepted, connection_lost;
+/* Состояния init, invalid и done уже есть */
+state  = ready, hello, need_recipient, need_data, waiting_for_data, saving_mail, quit, server_error;
+event  = connection_accepted, cmd_helo, cmd_ehlo, cmd_mail, cmd_rcpt, cmd_data, cmd_rset, cmd_vrfy,
+    cmd_quit, mail_end, mail_data, mail_saved, connection_lost;
 
 transition =
 { tst  = init;          tev = connection_accepted;      next = ready;       ttype = accepted; };
 
 transition =
+{ tst  = ready;         tev = cmd_helo;                 next = hello;       ttype = helo; },
+{ tst  = ready;         tev = cmd_ehlo;                 next = hello;       ttype = ehlo; },
+{ tst  = ready;         tev = cmd_vrfy;                 next = ready;       ttype = vrfy; },
+{ tst  = ready;         tev = cmd_rset;                 next = ready;       ttype = rset; },
 { tst  = ready;         tev = cmd_quit;                 next = quit;        ttype = quit; },
 { tst  = ready;         tev = connection_lost;          next = done;        ttype = close; };
+
+transition =
+{ tst  = hello;         tev = cmd_helo;                 next = hello;       ttype = helo; },
+{ tst  = hello;         tev = cmd_ehlo;                 next = hello;       ttype = ehlo; },
+{ tst  = hello;         tev = cmd_vrfy;                 next = hello;       ttype = vrfy; },
+{ tst  = hello;         tev = cmd_rset;                 next = hello;       ttype = rset; },
+{ tst  = hello;         tev = cmd_quit;                 next = quit;        ttype = quit; },
+{ tst  = hello;         tev = connection_lost;          next = done;        ttype = close; };
+
+
 
 transition =
 { tst  = quit;          tev = connection_lost;          next = done;        ttype = close; };

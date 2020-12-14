@@ -193,7 +193,7 @@ int server_add_client(server_t* server) {
     }
 
     int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, server);
-    if (new_state == SERVER_FSM_ST_INVALID) {
+    if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
         logger_log(server->logger, ERROR_LOG, "server_add_client server_fsm_step");
         return -1;
     }
