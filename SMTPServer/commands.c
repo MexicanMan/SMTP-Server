@@ -20,7 +20,7 @@ int (*command_handlers[SMTP_CMDS])(char*, int, server_t*, int) = {
 };
 
 /**
- * @brief Parses and handles command in message
+ * @brief  Parses and handles command in a message
  * @return Number of parsed command (1 or 0) or error (< 0)
  */
 int commands_parse(char* msg, int msg_len, server_t* server, int client_ind) {
@@ -48,7 +48,7 @@ int commands_parse(char* msg, int msg_len, server_t* server, int client_ind) {
 }
 
 int helo_handle(char* msg, int msg_len, server_t* server, int client_ind) {
-
+    // Не забываем, что в мсг все, а реальная длина в лене
 
     return 0;
 }

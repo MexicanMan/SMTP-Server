@@ -26,7 +26,7 @@ int server_send_client(server_t* server, int client_ind);
  * @param port Port
  * @param mail_dir Directory with local mails
  * @param exit_pipefd Pipe fd for graceful exit 
- * @return server_t* 
+ * @return Server
  */
 server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit_pipefd) {
     int sock_d;
@@ -204,12 +204,78 @@ int server_add_client(server_t* server) {
 }
 
 /**
- * @brief Handle client input buffer with splitting 
- * by end symbols if possible to parse it later
+ * @brief Try to parse probable command or send an error to client
  */
+int server_input_command_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
+    int parse_res = commands_parse(msg, msg_len, server, client_ind);
+    if (parse_res == 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP)) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_input_command_handle prepare_send_buf");
+            return -1;
+        }
+    } else if (parse_res < 0) {
+        logger_log(server->logger, ERROR_LOG, "server_input_command_handle commands_parse");
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief  Try to find end of line to parse full command
+ * @return Length of parsed command or 0 
+ */
+int server_check_input_command(server_t* server, int client_ind, server_client_t* client) {
+    int msg_len = 0;
+    char* end = strstr(client->inp_buf, EOL);
+
+    if (end) {
+        int end_size = sizeof(EOL) - 1;
+        end += end_size;  // strstr returns start of occurence when we need end
+        msg_len = end - client->inp_buf;
+
+        if (server_input_command_handle(client->inp_buf, msg_len - end_size, server, client_ind, client) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_check_input_command server_input_command_handle");
+            return -1;
+        }
+    }
+
+    return msg_len;
+}
+
+/**
+ * @brief Try to parse mail
+ */
+int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
+
+
+    return 0;
+}
+
+/**
+ * @brief  Try to find end of mail to parse full mail
+ * @return Length of parsed mail or 0 
+ */
+int server_check_input_mail(server_t* server, int client_ind, server_client_t* client) {
+    int msg_len = 0;
+    char* end = strstr(client->inp_buf, EOM);
+
+    if (end) {
+        int end_size = sizeof(EOM) - 1;
+        end += end_size;
+        msg_len = end - client->inp_buf;
+
+        if (server_input_mail_handle(client->inp_buf, msg_len - end_size, server, client_ind, client) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_check_input_mail server_input_mail_handle");
+            return -1;
+        }
+    }
+
+    return msg_len;
+}
+
 int server_handle_input(server_t* server, int client_ind, server_client_t* client) {
-    char* end = NULL;
-    int end_size = 0;
+    int msg_len = 0;
 
     if (client->client_state == SERVER_FSM_ST_INVALID) {
         logger_log(server->logger, ERROR_LOG, "server_handle_input BAD CLIENT STATE");
@@ -218,28 +284,20 @@ int server_handle_input(server_t* server, int client_ind, server_client_t* clien
 
     // If not receiveing DATA
     if (1/*client->client_state != SERVER_FSM_ST_DATA*/) {
-        end = strstr(client->inp_buf, EOL);
-        end_size = sizeof(EOL) - 1;
+        msg_len = server_check_input_command(server, client_ind, client);
+        if (msg_len < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_handle_input server_check_input_command");
+            return msg_len;
+        }
     } else {  // If receiving DATA
-        end = strstr(client->inp_buf, EOM);
-        end_size = sizeof(EOM) - 1;
+        msg_len = server_check_input_mail(server, client_ind, client);
+        if (msg_len < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_handle_input server_check_input_mail");
+            return msg_len;
+        }
     }
 
-    if (end) {
-        end += end_size;  // strstr returns start of occurence when we need end
-        int msg_len = end - client->inp_buf;
-
-        int parse_res = commands_parse(client->inp_buf, msg_len - end_size, server, client_ind);
-        if (parse_res == 0) {
-            if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP)) < 0) {
-                logger_log(server->logger, ERROR_LOG, "server_handle_input prepare_send_buf");
-                return -1;
-            }
-        } else if (parse_res < 0) {
-            logger_log(server->logger, ERROR_LOG, "server_handle_input commands_parse");
-            return -1;
-        }
-        
+    if (msg_len) {
         if (msg_len != client->inp_len) {
             client->inp_len -= msg_len;
             memcpy(client->inp_buf, client->inp_buf + msg_len, sizeof(char) * client->inp_len);
