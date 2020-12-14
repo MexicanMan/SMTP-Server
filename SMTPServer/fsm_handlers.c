@@ -1,16 +1,10 @@
 #include <string.h>
+#include <unistd.h>
 
 #include "fsm_handlers.h"
 #include "commands.h"
 
 #include "../SMTPShared/shared_strings.h"
-
-void prepare_send_buf(struct pollfd* client_fd, server_client_t* client, char* msg, int len) {
-    concat_dynamic_strings(&client->out_buf, msg, client->out_len, len); 
-    client->out_len += len;
-
-    client_fd->events |= POLLOUT;
-} 
 
 te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fsm_state nextState) {
     logger_log(server->logger, INFO_LOG, "Adding new client");
@@ -24,25 +18,50 @@ te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fs
     client.inp_len = 0;
     client.out_len = 0;
 
-    prepare_send_buf(server->fds + server->fd_max - 1, &client, READY_RESP, sizeof(READY_RESP));
-
-    if (add_item(&server->clients, client_d, client) < 0)
+    if (prepare_send_buf(server->fds + server->fd_max - 1, &client, READY_RESP, sizeof(READY_RESP)) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_ACCEPTED prepare_send_buf");
         return SERVER_FSM_ST_INVALID;
+    }
+
+    if (add_item(&server->clients, client_d, client) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_ACCEPTED add_item");
+        return SERVER_FSM_ST_INVALID;
+    }
 
     logger_log(server->logger, INFO_LOG, "New client added");
 
     return nextState;
 }
 
-te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_d, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state nextState) {
+    logger_log(server->logger, INFO_LOG, "Client wants to quit");
+
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_item(server->clients, client_d);
+
+    if (prepare_send_buf(server->fds + client_ind, client, QUIT_RESP, sizeof(QUIT_RESP)) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_QUIT prepare_send_buf");
+        return SERVER_FSM_ST_INVALID;
+    }
+
+    client->client_state = nextState;
+
+    return nextState;
+}
+
+te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_ind, te_server_fsm_state nextState) {
     logger_log(server->logger, INFO_LOG, "Client leaving");
 
-    int last_item_ind = server->fd_max - 1;
-    if (client_ind < last_item_ind)
-        memcpy(server->fds + client_ind, server->fds + client_ind + 1, sizeof(struct pollfd) * (last_item_ind - client_ind));
-    server->fd_max = last_item_ind;
+    int client_d = server->fds[client_ind].fd;
+
+    int last_fd_ind = server->fd_max - 1;
+    if (client_ind < last_fd_ind)
+        memcpy(server->fds + client_ind, server->fds + client_ind + 1, sizeof(struct pollfd) * (last_fd_ind - client_ind));
+    server->fd_max = last_fd_ind;
 
     del_item(&server->clients, client_d);
+
+    close(client_d);
 
     logger_log(server->logger, INFO_LOG, "Client left");
 

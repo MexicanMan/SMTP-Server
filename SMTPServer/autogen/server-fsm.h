@@ -59,7 +59,7 @@ typedef enum {
     SERVER_FSM_ST_INIT,             SERVER_FSM_ST_READY,
     SERVER_FSM_ST_NEED_SENDER,      SERVER_FSM_ST_NEED_RECIPIENT,
     SERVER_FSM_ST_NEED_DATA,        SERVER_FSM_ST_WAITING_FOR_DATA,
-    SERVER_FSM_ST_SAVING_MAIL,      SERVER_FSM_ST_CLOSED,
+    SERVER_FSM_ST_SAVING_MAIL,      SERVER_FSM_ST_QUIT,
     SERVER_FSM_ST_INVALID,          SERVER_FSM_ST_DONE
 } te_server_fsm_state;
 
@@ -68,16 +68,15 @@ typedef enum {
  *
  *  Count of the valid transition events
  */
-#define SERVER_FSM_EVENT_CT 14
+#define SERVER_FSM_EVENT_CT 13
 typedef enum {
-    SERVER_FSM_EV_CMND_NOOP,           SERVER_FSM_EV_CMND_HELO,
-    SERVER_FSM_EV_CMND_EHLO,           SERVER_FSM_EV_CMND_MAIL,
-    SERVER_FSM_EV_CMND_RCPT,           SERVER_FSM_EV_CMND_VRFY,
-    SERVER_FSM_EV_CMND_DATA,           SERVER_FSM_EV_CMND_RSET,
-    SERVER_FSM_EV_CMND_QUIT,           SERVER_FSM_EV_MAIL_END,
-    SERVER_FSM_EV_MAIL_DATA,           SERVER_FSM_EV_MAIL_SAVED,
-    SERVER_FSM_EV_CONNECTION_ACCEPTED, SERVER_FSM_EV_CONNECTION_LOST,
-    SERVER_FSM_EV_INVALID
+    SERVER_FSM_EV_CMD_HELO,            SERVER_FSM_EV_CMD_EHLO,
+    SERVER_FSM_EV_CMD_MAIL,            SERVER_FSM_EV_CMD_RCPT,
+    SERVER_FSM_EV_CMD_DATA,            SERVER_FSM_EV_CMD_RSET,
+    SERVER_FSM_EV_CMD_VRFY,            SERVER_FSM_EV_CMD_QUIT,
+    SERVER_FSM_EV_MAIL_END,            SERVER_FSM_EV_MAIL_DATA,
+    SERVER_FSM_EV_MAIL_SAVED,          SERVER_FSM_EV_CONNECTION_ACCEPTED,
+    SERVER_FSM_EV_CONNECTION_LOST,     SERVER_FSM_EV_INVALID
 } te_server_fsm_event;
 
 /**
@@ -89,8 +88,7 @@ extern te_server_fsm_state
 server_fsm_step(
     te_server_fsm_state server_fsm_state,
     te_server_fsm_event trans_evt,
-    int client_d,
-    int client_ind,
+    int client,
     void* server );
 
 #endif /* AUTOFSM_SERVER_FSM_H_GUARD */

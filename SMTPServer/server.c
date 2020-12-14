@@ -6,8 +6,11 @@
 #include <unistd.h>
 
 #include "server.h"
+#include "commands.h"
 
 #include "autogen/server-fsm.h"
+
+#include "../SMTPShared/shared_strings.h"
 
 #define POLL_WAIT 1000
 #define READBUF_SIZE 20
@@ -129,6 +132,25 @@ void server_finalize(server_t* server) {
     free(server);
 }
 
+void server_fill_pollfd(server_t* server, int fd, int ind) {
+    server->fds[ind].fd = fd;
+    server->fds[ind].events = POLLIN;
+    server->fds[ind].revents = 0;
+
+    server->fd_max++;
+}
+
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, char* msg, int len) {
+    if (concat_dynamic_strings(&client->out_buf, msg, client->out_len, len) < 0)
+        return -1;
+
+    client->out_len += len;
+
+    client_fd->events |= POLLOUT;
+
+    return 0;
+} 
+
 /**
  * @brief Create and bind server socket
  * @param port Server port
@@ -161,14 +183,6 @@ int server_create_and_biding(int port) {
     return sock_d;
 }
 
-void server_fill_pollfd(server_t* server, int fd, int ind) {
-    server->fds[ind].fd = fd;
-    server->fds[ind].events = POLLIN;
-    server->fds[ind].revents = 0;
-
-    server->fd_max++;
-}
-
 int server_add_client(server_t* server) {
     logger_log(server->logger, INFO_LOG, "Accepting new client");
 
@@ -178,13 +192,63 @@ int server_add_client(server_t* server) {
         return client_d;
     }
 
-    int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, 0, server);
+    int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, server);
     if (new_state == SERVER_FSM_ST_INVALID) {
         logger_log(server->logger, ERROR_LOG, "server_add_client server_fsm_step");
         return -1;
     }
 
     logger_log(server->logger, INFO_LOG, "Accepted new client");
+
+    return 0;
+}
+
+/**
+ * @brief Handle client input buffer with splitting 
+ * by end symbols if possible to parse it later
+ */
+int server_handle_input(server_t* server, int client_ind, server_client_t* client) {
+    char* end = NULL;
+    int end_size = 0;
+
+    if (client->client_state == SERVER_FSM_ST_INVALID) {
+        logger_log(server->logger, ERROR_LOG, "server_handle_input BAD CLIENT STATE");
+        return -1;  // assert?
+    }
+
+    // If not receiveing DATA
+    if (1/*client->client_state != SERVER_FSM_ST_DATA*/) {
+        end = strstr(client->inp_buf, EOL);
+        end_size = sizeof(EOL) - 1;
+    } else {  // If receiving DATA
+        end = strstr(client->inp_buf, EOM);
+        end_size = sizeof(EOM) - 1;
+    }
+
+    if (end) {
+        end += end_size;  // strstr returns start of occurence when we need end
+        int msg_len = end - client->inp_buf;
+
+        int parse_res = commands_parse(client->inp_buf, msg_len - end_size, server, client_ind);
+        if (parse_res == 0) {
+            if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP)) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_handle_input prepare_send_buf");
+                return -1;
+            }
+        } else if (parse_res < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_handle_input commands_parse");
+            return -1;
+        }
+        
+        if (msg_len != client->inp_len) {
+            client->inp_len -= msg_len;
+            memcpy(client->inp_buf, client->inp_buf + msg_len, sizeof(char) * client->inp_len);
+        } else {
+            free(client->inp_buf);
+            client->inp_buf = NULL;
+            client->inp_len = 0;
+        }
+    }
 
     return 0;
 }
@@ -197,12 +261,18 @@ int server_serve_client(server_t* server, int client_ind) {
 
     int len = recv(client_d, buf, READBUF_SIZE, 0);
     if (len > 0) {
-        // tmp
-        buf[len] = '\0';
-        printf("%s", buf);
-        // ...
+        if (concat_dynamic_strings(&client->inp_buf, buf, client->inp_len, len) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_serve_client concat_dynamic_strings");
+            return -1;
+        }
+        client->inp_len += len;
+
+        if (server_handle_input(server, client_ind, client) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_serve_client server_handle_input");
+            return -1;
+        }
     } else if (len == 0) {
-        server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_d, client_ind, server);
+        server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server);
     }
 
     return len;
@@ -214,7 +284,6 @@ int server_send_client(server_t* server, int client_ind) {
 
     int send_len = send(client_d, client->out_buf, client->out_len, 0);
     if (send_len != client->out_len) {
-        // Смещаем буфер клиента влево на отосланное сообщение и идем сначала
         client->out_len -= send_len;
         memcpy(client->out_buf, client->out_buf + send_len, sizeof(char) * client->out_len);
     } else {
@@ -222,7 +291,12 @@ int server_send_client(server_t* server, int client_ind) {
         client->out_buf = NULL;
         client->out_len = 0;
 
+        // If we sent everything, there is no need to keep POLLOUT event
         server->fds[client_ind].events = POLLIN;
+
+        // Check if we sent some client last "goodbye" message
+        if (client->client_state == SERVER_FSM_ST_QUIT)
+            server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server);
     }
 
     return send_len;

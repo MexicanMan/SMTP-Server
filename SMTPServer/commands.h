@@ -1,6 +1,8 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
+#include "server.h"
+
 #include "autogen/server-fsm.h"
 
 #define EOL "\r\n"
@@ -18,6 +20,10 @@
 #define VRFY_CMD "VRFY"
 
 #define READY_RESP "220 Service ready\r\n"
-#define CLOSE_RESP "221 Service closing transmission channel\r\n"
+#define QUIT_RESP "221 Service closing transmission channel\r\n"
+
+#define BAD_CMD_RESP "500 Syntax error, command unrecognised\r\n"
+
+int commands_parse(char* msg, int msg_len, server_t* server, int client_ind);
 
 #endif
