@@ -15,15 +15,21 @@
 #define POLL_CLIENTS_IND 2  
 
 typedef struct server_struct {
-    logger_t* logger;               // Logger        
+    logger_t* logger;               // Logger      
+
+    const char* domain;             // Server domain  
 
     int fd_max;                     // Maximum descriptor number in buffer
     struct pollfd fds[POLL_SIZE];   // Poll buffer
 
     server_client_dict_t* clients;   // Clients list 
+
+    const char* maildir;            // Maildir
+    const char* client_mail_dir;     // Dir with mails to client
 } server_t;
 
-server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit_pipefd);
+server_t* server_init(logger_t* logger, int port, const char* domain, 
+                      const char* mail_dir, const char* client_mail_dir, int exit_pipefd);
 int server_main(server_t* server);
 void server_finalize(server_t* server);
 

@@ -62,3 +62,4 @@ client
 server
 
 *.log
+*.mail

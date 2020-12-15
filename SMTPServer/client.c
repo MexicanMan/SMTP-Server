@@ -24,18 +24,47 @@ void reset_client_mail(server_client_t* client) {
 }
 
 int client_add_from(server_client_t* client, const char* from, int len) {
-    return concat_dynamic_strings(&client->mail.from, from, 0, len);
+    // Add len here and in other places to store '\0' too
+    return concat_dynamic_strings(&client->mail.from, from, 0, len + 1);
 }
 
-int client_add_to(server_client_t* client, const char* to, int len) {
+int client_add_to(server_client_t* client, const char* to, int len, const char* domain) {
     if (client->mail.to_len >= MAX_TO)
         return 0;
 
-    if (concat_dynamic_strings(&client->mail.to[client->mail.to_len], to, 0, len) < 0)
+    if (concat_dynamic_strings(&client->mail.to[client->mail.to_len], to, 0, len + 1) < 0)
         return -1; 
     client->mail.to_len++;
 
+    char* to_domain = strstr(to, domain);
+    if (to_domain) {
+        client->mail.to_type |= LOCAL_MAIL;
+    } else {
+        client->mail.to_type |= DISTANT_MAIL;
+    }
+
     return 1;
+}
+
+int client_add_data(server_client_t* client, const char* data, int len) {
+    return concat_dynamic_strings(&client->mail.data, data, 0, len + 1);
+}
+
+int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir) {
+    if (client->mail.to_type == MAIL_NONE)
+        return -1;  // assert?
+
+    int res = 0;
+
+    if (client->mail.to_type & LOCAL_MAIL) {
+        res = save_mail(maildir, strlen(maildir), client->mail);
+    } 
+
+    if (client->mail.to_type & DISTANT_MAIL && !res) {
+        res = save_mail(client_mail_dir, strlen(client_mail_dir), client->mail);
+    }
+
+    return res;
 }
 
 void client_dict_free(server_client_dict_t** dict) {

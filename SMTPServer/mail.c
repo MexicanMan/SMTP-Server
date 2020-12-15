@@ -1,11 +1,17 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <math.h>
 
 #include "mail.h"
+
+#define MAIL_EXT ".mail"
 
 mail_t empty_mail() {
     mail_t mail = {
         .from = NULL,
         .to_len = 0,
+        .to_type = MAIL_NONE,
         .data = NULL
     };
 
@@ -26,8 +32,47 @@ void reset_mail(mail_t* mail) {
         mail->to[i] = NULL;
     }
     mail->to_len = 0;
+    mail->to_type = MAIL_NONE;
 
     if (mail->data)
         free(mail->data);
     mail->data = NULL;
+}
+
+char* get_mail_filename(const char* path, int len) {
+    unsigned long int curr_time = (unsigned) time(NULL);
+    int time_len = floor(log10(curr_time)) + 1;
+    int filename_len = time_len + len + sizeof(MAIL_EXT) + 1;
+
+    char* filename = (char*) calloc(filename_len, sizeof(char));
+    if (!filename)
+        return NULL;
+    
+    snprintf(filename, filename_len, "%s/%lu%s", path, curr_time, MAIL_EXT);
+    return filename;
+}
+
+int save_mail(const char* path, int len, mail_t mail) {
+    char* filename = get_mail_filename(path, len);
+    if (!filename)
+        return -1;
+
+    int res = 0;
+    FILE *f = fopen(filename, "w");
+    if (f) {
+        fprintf(f, "X-FROM: %s\n", mail.from);
+
+        for (int i = 0; i < mail.to_len; i++)
+            fprintf(f, "X-TO: %s\n", mail.to[i]);
+
+        fprintf(f, "\n%s", mail.data);
+
+        fclose(f);
+    } else {
+        res = -1;
+    }
+
+    free(filename);
+
+    return res;
 }

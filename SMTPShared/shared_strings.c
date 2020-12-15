@@ -8,12 +8,8 @@
 size_t concat_dynamic_strings(char** str1, const char* str2, size_t str1_len, size_t str2_len) {
     size_t extended_len = str1_len + str2_len;
     char *extended_memory = (char*) calloc(extended_len, sizeof(char));
-    if (!extended_memory) {
-        if (*str1)
-            free(*str1);
-            
+    if (!extended_memory)
         return -1;
-    }
 
     memcpy(extended_memory, *str1, sizeof(char) * str1_len);
     memcpy(extended_memory + str1_len, str2, sizeof(char) * str2_len);

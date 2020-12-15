@@ -64,9 +64,9 @@ typedef enum {
     SERVER_FSM_TR_HELO,
     SERVER_FSM_TR_INVALID,
     SERVER_FSM_TR_MAIL,
+    SERVER_FSM_TR_MAIL_RECEIVED,
     SERVER_FSM_TR_QUIT,
     SERVER_FSM_TR_RCPT,
-    SERVER_FSM_TR_RECEIVED,
     SERVER_FSM_TR_RSET,
     SERVER_FSM_TR_VRFY
 } te_server_fsm_trans;
@@ -170,12 +170,12 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_RSET */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_VRFY */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_QUIT */
-    { SERVER_FSM_ST_RECEIVED_DATA, SERVER_FSM_TR_RECEIVED }, /* EVT:  MAIL_END */
+    { SERVER_FSM_ST_HELLO, SERVER_FSM_TR_MAIL_RECEIVED }, /* EVT:  MAIL_END */
     { SERVER_FSM_ST_DONE, SERVER_FSM_TR_CLOSE }     /* EVT:  CONNECTION_LOST */
   },
 
 
-  /* STATE 6:  SERVER_FSM_ST_RECEIVED_DATA */
+  /* STATE 6:  SERVER_FSM_ST_QUIT */
   { { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_HELO */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_EHLO */
@@ -190,22 +190,7 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
   },
 
 
-  /* STATE 7:  SERVER_FSM_ST_QUIT */
-  { { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_HELO */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_EHLO */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_MAIL */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_RCPT */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_DATA */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_RSET */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_VRFY */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_QUIT */
-    { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  MAIL_END */
-    { SERVER_FSM_ST_DONE, SERVER_FSM_TR_CLOSE }     /* EVT:  CONNECTION_LOST */
-  },
-
-
-  /* STATE 8:  SERVER_FSM_ST_SERVER_ERROR */
+  /* STATE 7:  SERVER_FSM_ST_SERVER_ERROR */
   { { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CONNECTION_ACCEPTED */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_HELO */
     { SERVER_FSM_ST_INVALID, SERVER_FSM_TR_INVALID }, /* EVT:  CMD_EHLO */
@@ -226,7 +211,7 @@ server_fsm_trans_table[ SERVER_FSM_STATE_CT ][ SERVER_FSM_EVENT_CT ] = {
 #define Server_FsmStInit_off     83
 
 
-static char const zServer_FsmStrings[272] =
+static char const zServer_FsmStrings[258] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -236,32 +221,31 @@ static char const zServer_FsmStrings[272] =
 /*   100 */ "mail_from\0"
 /*   110 */ "rcpt_to\0"
 /*   118 */ "data\0"
-/*   123 */ "received_data\0"
-/*   137 */ "quit\0"
-/*   142 */ "server_error\0"
-/*   155 */ "connection_accepted\0"
-/*   175 */ "cmd_helo\0"
-/*   184 */ "cmd_ehlo\0"
-/*   193 */ "cmd_mail\0"
-/*   202 */ "cmd_rcpt\0"
-/*   211 */ "cmd_data\0"
-/*   220 */ "cmd_rset\0"
-/*   229 */ "cmd_vrfy\0"
-/*   238 */ "cmd_quit\0"
-/*   247 */ "mail_end\0"
-/*   256 */ "connection_lost";
+/*   123 */ "quit\0"
+/*   128 */ "server_error\0"
+/*   141 */ "connection_accepted\0"
+/*   161 */ "cmd_helo\0"
+/*   170 */ "cmd_ehlo\0"
+/*   179 */ "cmd_mail\0"
+/*   188 */ "cmd_rcpt\0"
+/*   197 */ "cmd_data\0"
+/*   206 */ "cmd_rset\0"
+/*   215 */ "cmd_vrfy\0"
+/*   224 */ "cmd_quit\0"
+/*   233 */ "mail_end\0"
+/*   242 */ "connection_lost";
 
-static const size_t aszServer_FsmStates[9] = {
-    83,  88,  94,  100, 110, 118, 123, 137, 142 };
+static const size_t aszServer_FsmStates[8] = {
+    83,  88,  94,  100, 110, 118, 123, 128 };
 
 static const size_t aszServer_FsmEvents[12] = {
-    155, 175, 184, 193, 202, 211, 220, 229, 238, 247, 256, 75 };
+    141, 161, 170, 179, 188, 197, 206, 215, 224, 233, 242, 75 };
 
 
 #define SERVER_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 12) \
     ? zServer_FsmStrings : zServer_FsmStrings + aszServer_FsmEvents[t])
 
-#define SERVER_FSM_STATE_NAME(s) ( (((unsigned)(s)) >= 9) \
+#define SERVER_FSM_STATE_NAME(s) ( (((unsigned)(s)) >= 8) \
     ? zServer_FsmStrings : zServer_FsmStrings + aszServer_FsmStates[s])
 
 #ifndef EXIT_FAILURE
@@ -371,6 +355,13 @@ server_fsm_step(
         break;
 
 
+    case SERVER_FSM_TR_MAIL_RECEIVED:
+        /* START == MAIL_RECEIVED == DO NOT CHANGE THIS COMMENT */
+        nxtSt = HANDLE_MAIL_RECEIVED(server, client, data, len, nxtSt);
+        /* END   == MAIL_RECEIVED == DO NOT CHANGE THIS COMMENT */
+        break;
+
+
     case SERVER_FSM_TR_QUIT:
         /* START == QUIT == DO NOT CHANGE THIS COMMENT */
         nxtSt = HANDLE_QUIT(server, client, nxtSt);
@@ -382,13 +373,6 @@ server_fsm_step(
         /* START == RCPT == DO NOT CHANGE THIS COMMENT */
         nxtSt = HANDLE_RCPT(server, client, data, len, nxtSt);
         /* END   == RCPT == DO NOT CHANGE THIS COMMENT */
-        break;
-
-
-    case SERVER_FSM_TR_RECEIVED:
-        /* START == RECEIVED == DO NOT CHANGE THIS COMMENT */
-        //nxtSt = HANDLE_RECEIVED();
-        /* END   == RECEIVED == DO NOT CHANGE THIS COMMENT */
         break;
 
 

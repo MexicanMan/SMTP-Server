@@ -28,7 +28,8 @@ int server_send_client(server_t* server, int client_ind);
  * @param exit_pipefd Pipe fd for graceful exit 
  * @return Server
  */
-server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit_pipefd) {
+server_t* server_init(logger_t* logger, int port, const char* domain, const char* maildir, 
+                      const char* client_mail_dir, int exit_pipefd) {
     int sock_d;
     
     logger_log(logger, INFO_LOG, "Initializing server...");
@@ -54,10 +55,15 @@ server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit
         return NULL;
     }
 
+    server->domain = domain;
+
     server->fd_max = 0;
     server_fill_pollfd(server, sock_d, POLL_SERVER_IND);
     server_fill_pollfd(server, exit_pipefd, POLL_PIPEFD_IND);
     server->clients = NULL;
+    
+    server->maildir = maildir;
+    server->client_mail_dir = client_mail_dir;
 
     return server;
 }
@@ -256,7 +262,16 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
  * @brief Try to parse mail
  */
 int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
-    // ...
+    int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_MAIL_END, client_ind, server, msg, msg_len);
+    if (new_state == SERVER_FSM_ST_INVALID) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_input_mail_handle prepare_send_buf");
+            return -1;
+        }
+    } else if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
+        logger_log(server->logger, ERROR_LOG, "server_input_mail_handle server_fsm_step");
+        return -1;
+    }
 
     return 0;
 }
@@ -270,11 +285,13 @@ int server_check_input_mail(server_t* server, int client_ind, server_client_t* c
     char* end = strstr(client->inp_buf, EOM);
 
     if (end) {
+        end[0] = EOS;  // We don't need EOM any later
+
         int end_size = sizeof(EOM) - 1;
-        end += end_size;
+        end += end_size; 
         msg_len = end - client->inp_buf;
 
-        if (server_input_mail_handle(client->inp_buf, msg_len, server, client_ind, client) < 0) {
+        if (server_input_mail_handle(client->inp_buf, msg_len - end_size, server, client_ind, client) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_check_input_mail server_input_mail_handle");
             return -1;
         }

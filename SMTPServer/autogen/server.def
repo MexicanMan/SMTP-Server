@@ -11,7 +11,7 @@ cookie = "const char* data";
 cookie = "int len";
 
 /* Состояния init, invalid и done уже есть */
-state  = ready, hello, mail_from, rcpt_to, data, received_data, quit, server_error;
+state  = ready, hello, mail_from, rcpt_to, data, quit, server_error;
 event  = connection_accepted, cmd_helo, cmd_ehlo, cmd_mail, cmd_rcpt, cmd_data, cmd_rset, cmd_vrfy,
     cmd_quit, mail_end, connection_lost;
 
@@ -55,12 +55,8 @@ transition =
 { tst = rcpt_to;        tev = connection_lost;      next = done;            ttype = close; };
 
 transition =
-{ tst = data;           tev = mail_end;             next = received_data;   ttype = received; },
+{ tst = data;           tev = mail_end;             next = hello;           ttype = mail_received; },
 { tst = data;           tev = connection_lost;      next = done;            ttype = close; };
-
-transition =
-
-{ tst = received_data;  tev = connection_lost;      next = done;            ttype = close; };
 
 transition =
 { tst = quit;           tev = connection_lost;      next = done;            ttype = close; };

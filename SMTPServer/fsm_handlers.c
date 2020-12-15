@@ -9,13 +9,13 @@ server_client_t* get_client_by_ind(server_t* server, int client_ind) {
     return get_item(server->clients, client_d);
 }
 
-te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Adding new client");
     
     server_fill_pollfd(server, client_d, server->fd_max);
 
     server_client_t client = empty_client();
-    client.client_state = nextState;
+    client.client_state = next_state;
 
     if (prepare_send_buf(server->fds + server->fd_max - 1, &client, READY_RESP, sizeof(READY_RESP)) < 0) {
         logger_log(server->logger, ERROR_LOG, "HANDLE_ACCEPTED prepare_send_buf");
@@ -29,10 +29,10 @@ te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fs
 
     logger_log(server->logger, INFO_LOG, "New client added");
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_HELO(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_HELO(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent HELO");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -42,12 +42,12 @@ te_server_fsm_state HANDLE_HELO(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_EHLO(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_EHLO(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent EHLO");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -57,12 +57,12 @@ te_server_fsm_state HANDLE_EHLO(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_MAIL(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_MAIL(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent MAIL");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -78,12 +78,12 @@ te_server_fsm_state HANDLE_MAIL(server_t* server, int client_ind, const char* da
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent RCPT");
     
     const char* resp = NULL;
@@ -92,7 +92,7 @@ te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* da
     server_client_t* client = get_client_by_ind(server, client_ind);
 
     // Save to
-    int addition_res = client_add_to(client, data, len);
+    int addition_res = client_add_to(client, data, len, server->domain);
     if (addition_res > 0) {
         resp = OK_RESP;
         resp_len = sizeof(OK_RESP);
@@ -109,12 +109,12 @@ te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* da
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_DATA(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_DATA(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent DATA");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -124,12 +124,40 @@ te_server_fsm_state HANDLE_DATA(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_MAIL_RECEIVED(server_t* server, int client_ind, 
+                                         const char* data, int len, te_server_fsm_state next_state) {
+    logger_log(server->logger, INFO_LOG, "Client sent whole mail");
+
+    server_client_t* client = get_client_by_ind(server, client_ind);
+
+    // Save data
+    if (client_add_data(client, data, len) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_MAIL_RECEIVED client_add_data");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    // Save mail
+    client_save_mail(client, server->maildir, server->client_mail_dir);
+    
+    // Clean mail after success save
+    reset_client_mail(client);
+
+    if (prepare_send_buf(server->fds + client_ind, client, OK_RESP, sizeof(OK_RESP)) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_MAIL_RECEIVED prepare_send_buf");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    client->client_state = next_state;
+    
+    return next_state;
+}
+
+te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client wants to quit");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -139,12 +167,12 @@ te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_VRFY(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_VRFY(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent VRFY");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -155,12 +183,12 @@ te_server_fsm_state HANDLE_VRFY(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client sent RSET");
 
     server_client_t* client = get_client_by_ind(server, client_ind);
@@ -172,12 +200,12 @@ te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_
         return SERVER_FSM_ST_SERVER_ERROR;
     }
 
-    client->client_state = nextState;
+    client->client_state = next_state;
 
-    return nextState;
+    return next_state;
 }
 
-te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_ind, te_server_fsm_state nextState) {
+te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_ind, te_server_fsm_state next_state) {
     logger_log(server->logger, INFO_LOG, "Client leaving");
 
     int client_d = server->fds[client_ind].fd;
@@ -193,5 +221,5 @@ te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_ind, te_server_fsm
 
     logger_log(server->logger, INFO_LOG, "Client left");
 
-    return nextState;
+    return next_state;
 }

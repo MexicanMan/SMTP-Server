@@ -12,7 +12,7 @@
 
 // Logger option flags
 #define FILE_PRINT 0x01
-#define  CONSOLE_PRINT 0x02
+#define CONSOLE_PRINT 0x02
 
 typedef enum log_msg_type_enum {
     DEBUG_LOG = 1,

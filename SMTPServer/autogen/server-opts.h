@@ -52,14 +52,15 @@
  *  Enumeration of each option type for server
  */
 typedef enum {
-    INDEX_OPT_PORT        =  0,
-    INDEX_OPT_LOG_DIR     =  1,
-    INDEX_OPT_MAIL_DIR    =  2,
-    INDEX_OPT_HELP        =  3,
-    INDEX_OPT_MORE_HELP   =  4
+    INDEX_OPT_PORT             =  0,
+    INDEX_OPT_LOG_DIR          =  1,
+    INDEX_OPT_MAIL_DIR         =  2,
+    INDEX_OPT_CLIENT_MAIL_DIR  =  3,
+    INDEX_OPT_HELP             =  4,
+    INDEX_OPT_MORE_HELP        =  5
 } teOptIndex;
 /** count of all options for server */
-#define OPTION_CT    5
+#define OPTION_CT    6
 
 /**
  *  Interface defines for all options.  Replace "n" with the UPPER_CASED
@@ -115,6 +116,7 @@ typedef enum {
 #define OPT_VALUE_PORT           (DESC(PORT).optArg.argInt)
 #define VALUE_OPT_LOG_DIR        'l'
 #define VALUE_OPT_MAIL_DIR       'd'
+#define VALUE_OPT_CLIENT_MAIL_DIR 'm'
 /** option flag (value) for help-value option */
 #define VALUE_OPT_HELP          '?'
 /** option flag (value) for more-help-value option */

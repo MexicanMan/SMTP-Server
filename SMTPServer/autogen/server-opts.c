@@ -45,7 +45,7 @@ extern FILE * option_usage_fp;
 /**
  *  static const strings for server options
  */
-static char const server_opt_strs[303] =
+static char const server_opt_strs[370] =
 /*     0 */ "Port to bind\0"
 /*    13 */ "PORT\0"
 /*    18 */ "port\0"
@@ -55,12 +55,15 @@ static char const server_opt_strs[303] =
 /*    65 */ "Path to the maildir directory\0"
 /*    95 */ "MAIL_DIR\0"
 /*   104 */ "mail-dir\0"
-/*   113 */ "display extended usage information and exit\0"
-/*   157 */ "help\0"
-/*   162 */ "extended usage information passed thru pager\0"
-/*   207 */ "more-help\0"
-/*   217 */ "SERVER\0"
-/*   224 */ "server - SMTP server\n"
+/*   113 */ "Path to the client mails directory\0"
+/*   148 */ "CLIENT_MAIL_DIR\0"
+/*   164 */ "client-mail-dir\0"
+/*   180 */ "display extended usage information and exit\0"
+/*   224 */ "help\0"
+/*   229 */ "extended usage information passed thru pager\0"
+/*   274 */ "more-help\0"
+/*   284 */ "SERVER\0"
+/*   291 */ "server - SMTP server\n"
             "Usage:  %s { -<flag> [<val>] | --<name>[{=| }<val>] }...\n";
 
 /**
@@ -102,14 +105,27 @@ static char const server_opt_strs[303] =
 #define MAIL_DIR_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
 
+/**
+ *  client_mail_dir option description:
+ */
+/** Descriptive text for the client_mail_dir option */
+#define CLIENT_MAIL_DIR_DESC      (server_opt_strs+113)
+/** Upper-cased name for the client_mail_dir option */
+#define CLIENT_MAIL_DIR_NAME      (server_opt_strs+148)
+/** Name string for the client_mail_dir option */
+#define CLIENT_MAIL_DIR_name      (server_opt_strs+164)
+/** Compiled in flag settings for the client_mail_dir option */
+#define CLIENT_MAIL_DIR_FLAGS     (OPTST_DISABLED \
+        | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
+
 /*
  *  Help/More_Help option descriptions:
  */
-#define HELP_DESC       (server_opt_strs+113)
-#define HELP_name       (server_opt_strs+157)
+#define HELP_DESC       (server_opt_strs+180)
+#define HELP_name       (server_opt_strs+224)
 #ifdef HAVE_WORKING_FORK
-#define MORE_HELP_DESC  (server_opt_strs+162)
-#define MORE_HELP_name  (server_opt_strs+207)
+#define MORE_HELP_DESC  (server_opt_strs+229)
+#define MORE_HELP_name  (server_opt_strs+274)
 #define MORE_HELP_FLAGS (OPTST_IMM | OPTST_NO_INIT)
 #else
 #define MORE_HELP_DESC  HELP_DESC
@@ -170,6 +186,18 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ MAIL_DIR_DESC, MAIL_DIR_NAME, MAIL_DIR_name,
      /* disablement strs */ NULL, NULL },
 
+  {  /* entry idx, value */ 3, VALUE_OPT_CLIENT_MAIL_DIR,
+     /* equiv idx, value */ 3, VALUE_OPT_CLIENT_MAIL_DIR,
+     /* equivalenced to  */ NO_EQUIVALENT,
+     /* min, max, act ct */ 0, 1, 0,
+     /* opt state flags  */ CLIENT_MAIL_DIR_FLAGS, 0,
+     /* last opt argumnt */ { NULL }, /* --client_mail_dir */
+     /* arg list/cookie  */ NULL,
+     /* must/cannot opts */ NULL, NULL,
+     /* option proc      */ NULL,
+     /* desc, NAME, name */ CLIENT_MAIL_DIR_DESC, CLIENT_MAIL_DIR_NAME, CLIENT_MAIL_DIR_name,
+     /* disablement strs */ NULL, NULL },
+
   {  /* entry idx, value */ INDEX_OPT_HELP, VALUE_OPT_HELP,
      /* equiv idx value  */ NO_EQUIVALENT, VALUE_OPT_HELP,
      /* equivalenced to  */ NO_EQUIVALENT,
@@ -198,9 +226,9 @@ static tOptDesc optDesc[OPTION_CT] = {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /** Reference to the upper cased version of server. */
-#define zPROGNAME       (server_opt_strs+217)
+#define zPROGNAME       (server_opt_strs+284)
 /** Reference to the title line for server usage. */
-#define zUsageTitle     (server_opt_strs+224)
+#define zUsageTitle     (server_opt_strs+291)
 /** There is no server configuration file. */
 #define zRcName         NULL
 /** There are no directories to search for server config files. */
@@ -346,7 +374,7 @@ tOptions serverOptions = {
       NO_EQUIVALENT, /* '-#' option index */
       NO_EQUIVALENT /* index of default opt */
     },
-    5 /* full option count */, 3 /* user option count */,
+    6 /* full option count */, 4 /* user option count */,
     server_full_usage, server_short_usage,
     NULL, NULL,
     PKGDATADIR, server_packager_info
@@ -488,6 +516,9 @@ static void bogus_function(void) {
 
   /* referenced via serverOptions.pOptDesc->pzText */
   puts(_("Path to the maildir directory"));
+
+  /* referenced via serverOptions.pOptDesc->pzText */
+  puts(_("Path to the client mails directory"));
 
   /* referenced via serverOptions.pOptDesc->pzText */
   puts(_("display extended usage information and exit"));
