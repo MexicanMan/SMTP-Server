@@ -2,7 +2,7 @@
 #include <unistd.h>
 
 #include "fsm_handlers.h"
-#include "commands.h"
+#include "commands_parser.h"
 
 server_client_t* get_client_by_ind(server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
@@ -14,12 +14,8 @@ te_server_fsm_state HANDLE_ACCEPTED(server_t* server, int client_d, te_server_fs
     
     server_fill_pollfd(server, client_d, server->fd_max);
 
-    server_client_t client;
+    server_client_t client = empty_client();
     client.client_state = nextState;
-    client.inp_buf = NULL;
-    client.out_buf = NULL;
-    client.inp_len = 0;
-    client.out_len = 0;
 
     if (prepare_send_buf(server->fds + server->fd_max - 1, &client, READY_RESP, sizeof(READY_RESP)) < 0) {
         logger_log(server->logger, ERROR_LOG, "HANDLE_ACCEPTED prepare_send_buf");
@@ -66,6 +62,58 @@ te_server_fsm_state HANDLE_EHLO(server_t* server, int client_ind, te_server_fsm_
     return nextState;
 }
 
+te_server_fsm_state HANDLE_MAIL(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState) {
+    logger_log(server->logger, INFO_LOG, "Client sent MAIL");
+
+    server_client_t* client = get_client_by_ind(server, client_ind);
+
+    // Save from
+    if (client_add_from(client, data, len) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_MAIL client_add_from");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    if (prepare_send_buf(server->fds + client_ind, client, OK_RESP, sizeof(OK_RESP)) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_MAIL prepare_send_buf");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    client->client_state = nextState;
+
+    return nextState;
+}
+
+te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState) {
+    logger_log(server->logger, INFO_LOG, "Client sent RCPT");
+    
+    const char* resp = NULL;
+    int resp_len = 0;
+
+    server_client_t* client = get_client_by_ind(server, client_ind);
+
+    // Save to
+    int addition_res = client_add_to(client, data, len);
+    if (addition_res > 0) {
+        resp = OK_RESP;
+        resp_len = sizeof(OK_RESP);
+    } else if (addition_res == 0) {
+        resp = STORAGE_RESP;
+        resp_len = sizeof(STORAGE_RESP);
+    } else {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_RCPT client_add_to");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    if (prepare_send_buf(server->fds + client_ind, client, resp, resp_len) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_RCPT prepare_send_buf");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    client->client_state = nextState;
+
+    return nextState;
+}
+
 te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state nextState) {
     logger_log(server->logger, INFO_LOG, "Client wants to quit");
 
@@ -102,7 +150,7 @@ te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_
 
     server_client_t* client = get_client_by_ind(server, client_ind);
 
-    // ToDo: remove all client data (from, to, data)...
+    reset_client_mail(client);
 
     if (prepare_send_buf(server->fds + client_ind, client, OK_RESP, sizeof(OK_RESP)) < 0) {
         logger_log(server->logger, ERROR_LOG, "HANDLE_RSET prepare_send_buf");

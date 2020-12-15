@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "server.h"
-#include "commands.h"
+#include "commands_parser.h"
 
 #include "autogen/server-fsm.h"
 
@@ -33,17 +33,24 @@ server_t* server_init(logger_t* logger, int port, const char* mail_dir, int exit
     
     logger_log(logger, INFO_LOG, "Initializing server...");
 
-    server_t* server = (server_t*) malloc(sizeof(server_t));
-    if (!server) {
-        logger_log(logger, ERROR_LOG, "server_init malloc");
+    if (parser_initalize(logger) < 0) {
+        logger_log(logger, ERROR_LOG, "server_init parser_initalize");
         return NULL;
     }
 
-    server->logger= logger;
+    server_t* server = (server_t*) malloc(sizeof(server_t));
+    if (!server) {
+        logger_log(logger, ERROR_LOG, "server_init malloc");
+        parser_finalize();
+        return NULL;
+    }
+
+    server->logger = logger;
 
     if ((sock_d = server_create_and_biding(port)) < 0) {
         logger_log(logger, ERROR_LOG, "server_init server_create_and_biding");
         free(server);
+        parser_finalize();
         return NULL;
     }
 
@@ -127,6 +134,8 @@ void server_finalize(server_t* server) {
 
     client_dict_free(&server->clients);
 
+    parser_finalize();
+
     logger_log(server->logger, INFO_LOG, "Server stopped");
 
     free(server);
@@ -140,7 +149,7 @@ void server_fill_pollfd(server_t* server, int fd, int ind) {
     server->fd_max++;
 }
 
-int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, char* msg, int len) {
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, int len) {
     if (concat_dynamic_strings(&client->out_buf, msg, client->out_len, len) < 0)
         return -1;
 
@@ -192,7 +201,7 @@ int server_add_client(server_t* server) {
         return client_d;
     }
 
-    int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, server);
+    int new_state = server_fsm_step(SERVER_FSM_ST_INIT, SERVER_FSM_EV_CONNECTION_ACCEPTED, client_d, server, NULL, 0);
     if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
         logger_log(server->logger, ERROR_LOG, "server_add_client server_fsm_step");
         return -1;
@@ -234,7 +243,7 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
         end += end_size;  // strstr returns start of occurence when we need end
         msg_len = end - client->inp_buf;
 
-        if (server_input_command_handle(client->inp_buf, msg_len - end_size, server, client_ind, client) < 0) {
+        if (server_input_command_handle(client->inp_buf, msg_len, server, client_ind, client) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_check_input_command server_input_command_handle");
             return -1;
         }
@@ -265,7 +274,7 @@ int server_check_input_mail(server_t* server, int client_ind, server_client_t* c
         end += end_size;
         msg_len = end - client->inp_buf;
 
-        if (server_input_mail_handle(client->inp_buf, msg_len - end_size, server, client_ind, client) < 0) {
+        if (server_input_mail_handle(client->inp_buf, msg_len, server, client_ind, client) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_check_input_mail server_input_mail_handle");
             return -1;
         }
@@ -330,7 +339,7 @@ int server_serve_client(server_t* server, int client_ind) {
             return -1;
         }
     } else if (len == 0) {
-        server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server);
+        server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server, NULL, 0);
     }
 
     return len;
@@ -354,7 +363,7 @@ int server_send_client(server_t* server, int client_ind) {
 
         // Check if we sent some client last "goodbye" message
         if (client->client_state == SERVER_FSM_ST_QUIT)
-            server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server);
+            server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server, NULL, 0);
     }
 
     return send_len;

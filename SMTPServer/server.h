@@ -28,6 +28,6 @@ int server_main(server_t* server);
 void server_finalize(server_t* server);
 
 void server_fill_pollfd(server_t* server, int fd, int ind);
-int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, char* msg, int len);
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, int len);
 
 #endif

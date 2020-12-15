@@ -4,6 +4,40 @@
 
 #include "client.h"
 
+#include "../SMTPShared/shared_strings.h"
+
+server_client_t empty_client() {
+    server_client_t client = {
+        .client_state = SERVER_FSM_ST_INIT,
+        .inp_buf = NULL,
+        .out_buf = NULL,
+        .inp_len = 0,
+        .out_len = 0,
+        .mail = empty_mail()
+    };
+
+    return client;
+}
+
+void reset_client_mail(server_client_t* client) {
+    reset_mail(&client->mail);
+}
+
+int client_add_from(server_client_t* client, const char* from, int len) {
+    return concat_dynamic_strings(&client->mail.from, from, 0, len);
+}
+
+int client_add_to(server_client_t* client, const char* to, int len) {
+    if (client->mail.to_len >= MAX_TO)
+        return 0;
+
+    if (concat_dynamic_strings(&client->mail.to[client->mail.to_len], to, 0, len) < 0)
+        return -1; 
+    client->mail.to_len++;
+
+    return 1;
+}
+
 void client_dict_free(server_client_dict_t** dict) {
     server_client_dict_t *curr, *next;
 
@@ -15,6 +49,7 @@ void client_dict_free(server_client_dict_t** dict) {
             free(val.inp_buf);
         if (val.out_buf)
             free(val.out_buf);
+        reset_mail(&val.mail);
 
         free(curr);
     }   
@@ -53,6 +88,7 @@ int del_item(server_client_dict_t** dict, int key) {
                 free(ptr->value.inp_buf);
             if (ptr->value.out_buf)
                 free(ptr->value.out_buf);
+            reset_mail(&ptr->value.mail);
             free(ptr);
             
             return 0;

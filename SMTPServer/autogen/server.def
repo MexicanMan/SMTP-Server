@@ -7,9 +7,11 @@ prefix = server_fsm;
 
 cookie = "int client";
 cookie = "void* server";
+cookie = "const char* data";
+cookie = "int len";
 
 /* Состояния init, invalid и done уже есть */
-state  = ready, hello, need_recipient, need_data, waiting_for_data, saving_mail, quit, server_error;
+state  = ready, hello, mail_from, rcpt_to, waiting_for_data, saving_mail, quit, server_error;
 event  = connection_accepted, cmd_helo, cmd_ehlo, cmd_mail, cmd_rcpt, cmd_data, cmd_rset, cmd_vrfy,
     cmd_quit, mail_end, mail_data, mail_saved, connection_lost;
 
@@ -27,12 +29,30 @@ transition =
 transition =
 { tst  = hello;         tev = cmd_helo;                 next = hello;       ttype = helo; },
 { tst  = hello;         tev = cmd_ehlo;                 next = hello;       ttype = ehlo; },
+{ tst  = hello;         tev = cmd_mail;                 next = mail_from;   ttype = mail; },
 { tst  = hello;         tev = cmd_vrfy;                 next = hello;       ttype = vrfy; },
 { tst  = hello;         tev = cmd_rset;                 next = hello;       ttype = rset; },
 { tst  = hello;         tev = cmd_quit;                 next = quit;        ttype = quit; },
 { tst  = hello;         tev = connection_lost;          next = done;        ttype = close; };
 
+transition =
+{ tst  = mail_from;     tev = cmd_helo;                 next = hello;       ttype = helo; },
+{ tst  = mail_from;     tev = cmd_ehlo;                 next = hello;       ttype = ehlo; },
+{ tst  = mail_from;     tev = cmd_rcpt;                 next = rcpt_to;     ttype = rcpt; },
+{ tst  = mail_from;     tev = cmd_vrfy;                 next = mail_from;   ttype = vrfy; },
+{ tst  = mail_from;     tev = cmd_rset;                 next = hello;       ttype = rset; },
+{ tst  = mail_from;     tev = cmd_quit;                 next = quit;        ttype = quit; },
+{ tst  = mail_from;     tev = connection_lost;          next = done;        ttype = close; };
 
+transition =
+{ tst  = rcpt_to;     tev = cmd_helo;                 next = hello;       ttype = helo; },
+{ tst  = rcpt_to;     tev = cmd_ehlo;                 next = hello;       ttype = ehlo; },
+{ tst  = rcpt_to;     tev = cmd_rcpt;                 next = rcpt_to;     ttype = rcpt; },
+
+{ tst  = rcpt_to;     tev = cmd_vrfy;                 next = rcpt_to;     ttype = vrfy; },
+{ tst  = rcpt_to;     tev = cmd_rset;                 next = hello;       ttype = rset; },
+{ tst  = rcpt_to;     tev = cmd_quit;                 next = quit;        ttype = quit; },
+{ tst  = rcpt_to;     tev = connection_lost;          next = done;        ttype = close; };
 
 transition =
 { tst  = quit;          tev = connection_lost;          next = done;        ttype = close; };

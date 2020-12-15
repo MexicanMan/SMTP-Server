@@ -5,6 +5,8 @@
         "error.h": "c",
         "in.h": "c",
         "fsm_handlers.h": "c",
-        "client.h": "c"
+        "client.h": "c",
+        "stdlib.h": "c",
+        "commands_parser.h": "c"
     }
 }

@@ -57,8 +57,8 @@
 #define SERVER_FSM_STATE_CT  9
 typedef enum {
     SERVER_FSM_ST_INIT,             SERVER_FSM_ST_READY,
-    SERVER_FSM_ST_HELLO,            SERVER_FSM_ST_NEED_RECIPIENT,
-    SERVER_FSM_ST_NEED_DATA,        SERVER_FSM_ST_WAITING_FOR_DATA,
+    SERVER_FSM_ST_HELLO,            SERVER_FSM_ST_MAIL_FROM,
+    SERVER_FSM_ST_RCPT_TO,          SERVER_FSM_ST_WAITING_FOR_DATA,
     SERVER_FSM_ST_SAVING_MAIL,      SERVER_FSM_ST_QUIT,
     SERVER_FSM_ST_SERVER_ERROR,     SERVER_FSM_ST_INVALID,
     SERVER_FSM_ST_DONE
@@ -90,7 +90,9 @@ server_fsm_step(
     te_server_fsm_state server_fsm_state,
     te_server_fsm_event trans_evt,
     int client,
-    void* server );
+    void* server,
+    const char* data,
+    int len );
 
 #endif /* AUTOFSM_SERVER_FSM_H_GUARD */
 /*
