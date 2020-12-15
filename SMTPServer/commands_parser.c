@@ -183,9 +183,17 @@ int rcpt_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 }
 
 int data_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
-    
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_item(server->clients, client_d);
 
-    return 0;    
+    // Ignore arguments if there is some
+    int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_DATA, client_ind, server, NULL, 0);
+    if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
+        logger_log(server->logger, ERROR_LOG, "data_handle server_fsm_step");
+        return -1;
+    }
+
+    return 0;
 }
 
 int rset_handle(const char* msg, int msg_len, server_t* server, int client_ind) {

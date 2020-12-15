@@ -31,6 +31,8 @@
 #define QUIT_RESP "221 Service closing transmission channel\r\n"
 #define OK_RESP "250 Requested mail action okay, completed\r\n"
 
+#define START_MAIL_RESP "354 Start mail input; end with <CRLF>.<CRLF>\r\n"
+
 #define STORAGE_RESP "452 Requested action not taken: insufficient system storage\r\n"
 
 #define BAD_CMD_RESP "500 Syntax error, command unrecognised\r\n"

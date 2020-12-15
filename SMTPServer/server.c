@@ -256,7 +256,7 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
  * @brief Try to parse mail
  */
 int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
-
+    // ...
 
     return 0;
 }
@@ -292,7 +292,7 @@ int server_handle_input(server_t* server, int client_ind, server_client_t* clien
     }
 
     // If not receiveing DATA
-    if (1/*client->client_state != SERVER_FSM_ST_DATA*/) {
+    if (client->client_state != SERVER_FSM_ST_DATA) {
         msg_len = server_check_input_command(server, client_ind, client);
         if (msg_len < 0) {
             logger_log(server->logger, ERROR_LOG, "server_handle_input server_check_input_command");

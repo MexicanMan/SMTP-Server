@@ -114,6 +114,21 @@ te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* da
     return nextState;
 }
 
+te_server_fsm_state HANDLE_DATA(server_t* server, int client_ind, te_server_fsm_state nextState) {
+    logger_log(server->logger, INFO_LOG, "Client sent DATA");
+
+    server_client_t* client = get_client_by_ind(server, client_ind);
+
+    if (prepare_send_buf(server->fds + client_ind, client, START_MAIL_RESP, sizeof(START_MAIL_RESP)) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_DATA prepare_send_buf");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
+
+    client->client_state = nextState;
+
+    return nextState;
+}
+
 te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state nextState) {
     logger_log(server->logger, INFO_LOG, "Client wants to quit");
 

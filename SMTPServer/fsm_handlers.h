@@ -11,6 +11,7 @@ te_server_fsm_state HANDLE_HELO(server_t* server, int client_ind, te_server_fsm_
 te_server_fsm_state HANDLE_EHLO(server_t* server, int client_ind, te_server_fsm_state nextState);
 te_server_fsm_state HANDLE_MAIL(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState);
 te_server_fsm_state HANDLE_RCPT(server_t* server, int client_ind, const char* data, int len, te_server_fsm_state nextState);
+te_server_fsm_state HANDLE_DATA(server_t* server, int client_ind, te_server_fsm_state nextState);
 te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state nextState);
 te_server_fsm_state HANDLE_VRFY(server_t* server, int client_ind, te_server_fsm_state nextState);
 te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_state nextState);
