@@ -22,10 +22,10 @@ typedef struct server_struct {
     int fd_max;                     // Maximum descriptor number in buffer
     struct pollfd fds[POLL_SIZE];   // Poll buffer
 
-    server_client_dict_t* clients;   // Clients list 
+    server_client_dict_t* clients;  // Clients list 
 
     const char* maildir;            // Maildir
-    const char* client_mail_dir;     // Dir with mails to client
+    const char* client_mail_dir;    // Dir with mails to client
 } server_t;
 
 server_t* server_init(logger_t* logger, int port, const char* domain, 
