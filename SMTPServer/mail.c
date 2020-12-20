@@ -5,6 +5,8 @@
 
 #include "mail.h"
 
+#define FROM_HEADER "X-FROM:"
+#define TO_HEADER "X-TO:"
 #define MAIL_EXT ".mail"
 
 mail_t empty_mail() {
@@ -60,10 +62,10 @@ int save_mail(const char* path, int len, mail_t mail) {
     int res = 0;
     FILE *f = fopen(filename, "w");
     if (f) {
-        fprintf(f, "X-FROM: %s\n", mail.from);
+        fprintf(f, "%s %s\n", FROM_HEADER, mail.from);
 
         for (int i = 0; i < mail.to_len; i++)
-            fprintf(f, "X-TO: %s\n", mail.to[i]);
+            fprintf(f, "%s %s\n", TO_HEADER, mail.to[i]);
 
         fprintf(f, "\n%s", mail.data);
 

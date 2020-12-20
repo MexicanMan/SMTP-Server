@@ -7,6 +7,7 @@
         "fsm_handlers.h": "c",
         "client.h": "c",
         "stdlib.h": "c",
-        "commands_parser.h": "c"
+        "commands_parser.h": "c",
+        "test_client.h": "c"
     }
 }

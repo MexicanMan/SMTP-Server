@@ -142,7 +142,10 @@ te_server_fsm_state HANDLE_MAIL_RECEIVED(server_t* server, int client_ind,
     }
 
     // Save mail
-    client_save_mail(client, server->maildir, server->client_mail_dir);
+    if (client_save_mail(client, server->maildir, server->client_mail_dir) < 0) {
+        logger_log(server->logger, ERROR_LOG, "HANDLE_MAIL_RECEIVED client_save_mail");
+        return SERVER_FSM_ST_SERVER_ERROR;
+    }
     
     // Clean mail after success save
     reset_client_mail(client);

@@ -20,14 +20,14 @@ struct pcre_compiled {
     pcre_extra* extra_regexp;
 };
 
-const char* smtp_commands_regexp[SMTP_CMDS] = {
+static const char* smtp_commands_regexp[SMTP_CMDS] = {
     HELO_CMD_REGEXP, EHLO_CMD_REGEXP, MAIL_CMD_REGEXP, RCPT_CMD_REGEXP, 
     DATA_CMD_REGEXP, RSET_CMD_REGEXP, QUIT_CMD_REGEXP, VRFY_CMD_REGEXP
 };
 
-struct pcre_compiled smtp_compiled_regexp[SMTP_CMDS];
+static struct pcre_compiled smtp_compiled_regexp[SMTP_CMDS];
 
-int (*command_handlers[SMTP_CMDS])(const char*, int, server_t*, int) = {
+static int (*command_handlers[SMTP_CMDS])(const char*, int, server_t*, int) = {
     helo_handle, ehlo_handle, mail_handle, rcpt_handle, data_handle, rset_handle, quit_handle, vrfy_handle
 };
 
@@ -77,7 +77,7 @@ int commands_parse(char* msg, int msg_len, server_t* server, int client_ind) {
             const char *args = NULL;
             int len = 0;
             if (pcre_ret > 1) {
-                pcre_get_substring(msg, sub_str_vec, pcre_ret, 1, &(args));
+                pcre_get_substring(msg, sub_str_vec, pcre_ret, 1, &args);
                 len = sub_str_vec[3] - sub_str_vec[2];
             }
 
