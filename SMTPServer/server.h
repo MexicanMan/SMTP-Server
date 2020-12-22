@@ -28,7 +28,7 @@ typedef struct server_struct {
     const char* client_mail_dir;    // Dir with mails to client
 } server_t;
 
-server_t* server_init(logger_t* logger, int port, const char* domain, 
+server_t* server_init(logger_t* logger, const char* address, int port, const char* domain, 
                       const char* mail_dir, const char* client_mail_dir, int exit_pipefd);
 int server_main(server_t* server);
 void server_finalize(server_t* server);

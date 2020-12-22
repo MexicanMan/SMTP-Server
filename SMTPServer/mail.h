@@ -21,5 +21,6 @@ typedef struct mail_struct {
 mail_t empty_mail();
 void reset_mail(mail_t* mail);
 int save_mail(const char* path, int len, mail_t mail);
+int save_local_mail(const char* path, int len, const char* domain, mail_t mail);
 
 #endif

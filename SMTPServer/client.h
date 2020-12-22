@@ -28,7 +28,7 @@ void reset_client_mail(server_client_t* client);
 int client_add_from(server_client_t* client, const char* from, int len);
 int client_add_to(server_client_t* client, const char* to, int len, const char* domain);
 int client_add_data(server_client_t* client, const char* data, int len);
-int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir);
+int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir, const char* domain);
 
 void client_dict_free(server_client_dict_t** dict);
 server_client_t* get_item(server_client_dict_t* dict, int key);

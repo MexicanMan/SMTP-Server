@@ -15,7 +15,7 @@
 #define POLL_WAIT 1000
 #define READBUF_SIZE 20
 
-int server_create_and_biding(int port);
+int server_create_and_biding(const char* address, int port);
 int server_add_client(server_t* server);
 int server_serve_client(server_t* server, int client_ind);
 int server_send_client(server_t* server, int client_ind);
@@ -28,8 +28,8 @@ int server_send_client(server_t* server, int client_ind);
  * @param exit_pipefd Pipe fd for graceful exit 
  * @return Server
  */
-server_t* server_init(logger_t* logger, int port, const char* domain, const char* maildir, 
-                      const char* client_mail_dir, int exit_pipefd) {
+server_t* server_init(logger_t* logger, const char* address, int port, const char* domain, 
+                      const char* maildir, const char* client_mail_dir, int exit_pipefd) {
     int sock_d;
     
     logger_log(logger, INFO_LOG, "Initializing server...");
@@ -48,7 +48,7 @@ server_t* server_init(logger_t* logger, int port, const char* domain, const char
 
     server->logger = logger;
 
-    if ((sock_d = server_create_and_biding(port)) < 0) {
+    if ((sock_d = server_create_and_biding(address, port)) < 0) {
         logger_log(logger, ERROR_LOG, "server_init server_create_and_biding");
         free(server);
         parser_finalize();
@@ -168,10 +168,11 @@ int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const ch
 
 /**
  * @brief Create and bind server socket
+ * @param address Server address
  * @param port Server port
  * @return Server socket or error in cases of < 0 
  */
-int server_create_and_biding(int port) {
+int server_create_and_biding(const char* address, int port) {
     int sock_d;                 // Server fd
     struct sockaddr_in addr;    // Server address
     int option = 1;             // Option for SO_REUSEADDR
@@ -187,7 +188,7 @@ int server_create_and_biding(int port) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr("0.0.0.0");
+    addr.sin_addr.s_addr = inet_addr(address);
     addr.sin_port = htons(port);
  
     if (bind(sock_d, (struct sockaddr*) &addr, sizeof(addr)) < 0) {

@@ -50,14 +50,14 @@ int client_add_data(server_client_t* client, const char* data, int len) {
     return concat_dynamic_strings(&client->mail.data, data, 0, len + 1);
 }
 
-int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir) {
+int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir, const char* domain) {
     if (client->mail.to_type == MAIL_NONE)
         return -1;  // assert?
 
     int res = 0;
 
     if (client->mail.to_type & LOCAL_MAIL) {
-        res = save_mail(maildir, strlen(maildir), client->mail);
+        res = save_local_mail(maildir, strlen(maildir), domain, client->mail);
     } 
 
     if (client->mail.to_type & DISTANT_MAIL && !res) {

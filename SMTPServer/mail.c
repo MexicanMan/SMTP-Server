@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #include "mail.h"
+
+#include "../SMTPShared/dir_helper.h"
 
 #define FROM_HEADER "X-FROM:"
 #define TO_HEADER "X-TO:"
@@ -75,6 +78,26 @@ int save_mail(const char* path, int len, mail_t mail) {
     }
 
     free(filename);
+
+    return res;
+}
+
+int save_local_mail(const char* path, int len, const char* domain, mail_t mail) {
+    int res = 0;
+
+    for (int i = 0; i < mail.to_len && !res; i++) {
+        char* to_domain = strstr(mail.to[i], domain);
+        if (to_domain) {
+            char* username = mail.to[i] + 1;  // As first symbol should be <
+            int user_len = to_domain - username;  
+            int user_path_len = user_len + len + 2;
+            char user_path[user_path_len];
+            snprintf(user_path, user_path_len, "%s/%s", path, username);
+
+            if (!(res = create_dir_if_not_exists(user_path)))
+                res = save_mail(user_path, user_path_len, mail);
+        }
+    }
 
     return res;
 }

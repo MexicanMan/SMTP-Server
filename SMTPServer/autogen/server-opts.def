@@ -5,6 +5,15 @@ long-opts;
 gnu-usage;  /* GNU style preferred to default */
 
 flag = {
+    name      = address;            /* Сетевой адрес сервера */
+    value     = a;                  /* Краткий флаг (-a) */
+    arg-type  = string;
+    max       = 1;                  /* Не более одного раза */
+    min       = 1;                  /* Обязательный параметр */
+    descrip   = "Address to bind";
+};
+
+flag = {
     name      = port;               /* Порт, который слушает сервер */
     value     = p;                  /* Краткий флаг (-p) */
     arg-type  = number;
