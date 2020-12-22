@@ -91,15 +91,15 @@ int server_main(server_t* server) {
         } else if (poll_res > 0) {
             if (server_process_pollfds(server) < 0)
                 is_running = 0;
-        } else {
-            for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
-                if (++server->fds_timeouts[i] <= CLIENT_TIMEOUT) 
-                    continue;
-                
-                if (server_lost_client_timeout(server, i) < 0) {
-                    is_running = 0;
-                    break;
-                }
+        }
+
+        for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+            if (server->fds_timeouts[i]++ != CLIENT_TIMEOUT) 
+                continue;
+            
+            if (server_lost_client_timeout(server, i) < 0) {
+                is_running = 0;
+                break;
             }
         }
     }
