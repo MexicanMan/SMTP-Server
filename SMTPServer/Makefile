@@ -3,7 +3,7 @@ full_program_name := $(addprefix $(exe_directory),$(program_name))
 source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger tests
 version := -std=c99
 
-cflags:= -Wall -pedantic
+cflags:= -Wall -pedantic -Werror
 ldflags := `autoopts-config ldflags` -lpcre -lm
 test_ldflags := -lcunit
 
