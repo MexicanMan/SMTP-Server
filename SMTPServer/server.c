@@ -21,7 +21,7 @@ int server_process_pollfds(server_t* server);
 int server_add_client(server_t* server);
 int server_serve_client(server_t* server, int client_ind);
 int server_send_client(server_t* server, int client_ind);
-int server_lost_client(server_t* server, int client_ind);
+int server_lost_client_timeout(server_t* server, int client_ind);
 
 /**
  * @brief Initialize smtp server
@@ -96,7 +96,7 @@ int server_main(server_t* server) {
                 if (++server->fds_timeouts[i] <= CLIENT_TIMEOUT) 
                     continue;
                 
-                if (server_lost_client(server, i) < 0) {
+                if (server_lost_client_timeout(server, i) < 0) {
                     is_running = 0;
                     break;
                 }
@@ -413,13 +413,13 @@ int server_send_client(server_t* server, int client_ind) {
     return send_len;
 }
 
-int server_lost_client(server_t* server, int client_ind) {
+int server_lost_client_timeout(server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
     server_client_t* client = get_item(server->clients, client_d);
 
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_TIMEOUT, client_ind, server, NULL, 0);
     if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
-        logger_log(server->logger, ERROR_LOG, "server_lost_client server_fsm_step");
+        logger_log(server->logger, ERROR_LOG, "server_lost_client_timeout server_fsm_step");
         return -1;
     }
 
