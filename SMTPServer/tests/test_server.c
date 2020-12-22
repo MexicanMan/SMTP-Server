@@ -23,12 +23,14 @@ void test_server_fill_pollfd() {
     CU_ASSERT_EQUAL(server_mock.fds[ind].fd, key);
     CU_ASSERT_EQUAL(server_mock.fds[ind].events, POLLIN);
     CU_ASSERT_EQUAL(server_mock.fds[ind].revents, 0);
+
+    CU_ASSERT_EQUAL(server_mock.fds_timeouts[ind], 0);
 }
 
 void test_prepare_send_buf() {
     server_client_t client = empty_client();
 
-    int res = prepare_send_buf(server_mock.fds, &client, TEST_TEXT, sizeof(TEST_TEXT));
+    int res = prepare_send_buf(server_mock.fds, &client, TEST_TEXT, sizeof(TEST_TEXT), 0);
     CU_ASSERT_EQUAL(res, 0);
 
     CU_ASSERT_EQUAL(server_mock.fds[0].events, POLLIN | POLLOUT);

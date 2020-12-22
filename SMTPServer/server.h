@@ -21,6 +21,7 @@ typedef struct server_struct {
 
     int fd_max;                     // Maximum descriptor number in buffer
     struct pollfd fds[POLL_SIZE];   // Poll buffer
+    int fds_timeouts[POLL_SIZE];    // Timeouts for clients
 
     server_client_dict_t* clients;  // Clients list 
 
@@ -34,6 +35,7 @@ int server_main(server_t* server);
 void server_finalize(server_t* server);
 
 void server_fill_pollfd(server_t* server, int fd, int ind);
-int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, int len);
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, 
+                     int len, int is_final);
 
 #endif

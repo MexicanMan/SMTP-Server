@@ -14,11 +14,14 @@
 
 #define POLL_WAIT 1000
 #define READBUF_SIZE 20
+#define CLIENT_TIMEOUT 300
 
 int server_create_and_biding(const char* address, int port);
+int server_process_pollfds(server_t* server);
 int server_add_client(server_t* server);
 int server_serve_client(server_t* server, int client_ind);
 int server_send_client(server_t* server, int client_ind);
+int server_lost_client(server_t* server, int client_ind);
 
 /**
  * @brief Initialize smtp server
@@ -86,37 +89,16 @@ int server_main(server_t* server) {
         if (poll_res < -1) {
             logger_log(server->logger, WARNING_LOG, "server_main poll");
         } else if (poll_res > 0) {
-            if (server->fds[POLL_PIPEFD_IND].revents & POLLIN) {
-                server->fds[POLL_PIPEFD_IND].revents = 0;
+            if (server_process_pollfds(server) < 0)
                 is_running = 0;
-            } else {
-                if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
-                    server->fds[POLL_SERVER_IND].revents = 0;
-    
-                    if (server_add_client(server) < 0) {
-                        logger_log(server->logger, ERROR_LOG, "server_main server_add_client");
-                        break;
-                    }
-                }
-
-                for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
-                    if (server->fds[i].revents & POLLIN) {
-                        if (server_serve_client(server, i) < 0) {
-                            logger_log(server->logger, ERROR_LOG, "server_main server_serve_client");
-                            is_running = 0;
-                            break;
-                        }
-                    }
-
-                    if (server->fds[i].revents & POLLOUT) {
-                        if (server_send_client(server, i) < 0) {
-                            logger_log(server->logger, ERROR_LOG, "server_main server_send_client");
-                            is_running = 0;
-                            break;
-                        }
-                    }
-
-                    server->fds[i].revents = 0;
+        } else {
+            for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+                if (++server->fds_timeouts[i] <= CLIENT_TIMEOUT) 
+                    continue;
+                
+                if (server_lost_client(server, i) < 0) {
+                    is_running = 0;
+                    break;
                 }
             }
         }
@@ -151,17 +133,23 @@ void server_fill_pollfd(server_t* server, int fd, int ind) {
     server->fds[ind].fd = fd;
     server->fds[ind].events = POLLIN;
     server->fds[ind].revents = 0;
+    server->fds_timeouts[ind] = 0;
 
     server->fd_max++;
 }
 
-int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, int len) {
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, 
+                     int len, int is_final) {
     if (concat_dynamic_strings(&client->out_buf, msg, client->out_len, len) < 0)
         return -1;
 
     client->out_len += len;
 
-    client_fd->events |= POLLOUT;
+    // If it is final - block receive, because client should leave after this message
+    if (!is_final)
+        client_fd->events |= POLLOUT;
+    else
+        client_fd->events = POLLOUT;
 
     return 0;
 } 
@@ -199,6 +187,44 @@ int server_create_and_biding(const char* address, int port) {
     return sock_d;
 }
 
+int server_process_pollfds(server_t* server) {
+    if (server->fds[POLL_PIPEFD_IND].revents & POLLIN) {
+        server->fds[POLL_PIPEFD_IND].revents = 0;
+        return -1;
+    }
+
+    if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
+        server->fds[POLL_SERVER_IND].revents = 0;
+
+        if (server_add_client(server) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_add_client");
+            return -1;
+        }
+    }
+
+    for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+        if (server->fds[i].revents & POLLIN) {
+            server->fds_timeouts[i] = 0;
+
+            if (server_serve_client(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_serve_client");
+                return -1;
+            }
+        }
+
+        if (server->fds[i].revents & POLLOUT) {
+            if (server_send_client(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_send_client");
+                return -1;
+            }
+        }
+
+        server->fds[i].revents = 0;
+    }
+
+    return 0;
+}
+
 int server_add_client(server_t* server) {
     logger_log(server->logger, INFO_LOG, "Accepting new client");
 
@@ -225,7 +251,7 @@ int server_add_client(server_t* server) {
 int server_input_command_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int parse_res = commands_parse(msg, msg_len, server, client_ind);
     if (parse_res == 0) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_command_handle prepare_send_buf");
             return -1;
         }
@@ -265,7 +291,7 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
 int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_MAIL_END, client_ind, server, msg, msg_len);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_mail_handle prepare_send_buf");
             return -1;
         }
@@ -380,9 +406,22 @@ int server_send_client(server_t* server, int client_ind) {
         server->fds[client_ind].events = POLLIN;
 
         // Check if we sent some client last "goodbye" message
-        if (client->client_state == SERVER_FSM_ST_QUIT)
+        if (client->client_state == SERVER_FSM_ST_QUIT || client->client_state == SERVER_FSM_ST_TIMEOUT)
             server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server, NULL, 0);
     }
 
     return send_len;
+}
+
+int server_lost_client(server_t* server, int client_ind) {
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_item(server->clients, client_d);
+
+    int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_TIMEOUT, client_ind, server, NULL, 0);
+    if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
+        logger_log(server->logger, ERROR_LOG, "server_lost_client server_fsm_step");
+        return -1;
+    }
+
+    return 0;
 }

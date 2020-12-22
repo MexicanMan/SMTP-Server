@@ -17,6 +17,7 @@ te_server_fsm_state HANDLE_MAIL_RECEIVED(server_t* server, int client_ind,
 te_server_fsm_state HANDLE_QUIT(server_t* server, int client_ind, te_server_fsm_state next_state);
 te_server_fsm_state HANDLE_VRFY(server_t* server, int client_ind, te_server_fsm_state next_state);
 te_server_fsm_state HANDLE_RSET(server_t* server, int client_ind, te_server_fsm_state next_state);
+te_server_fsm_state HANDLE_TIMEOUT(server_t* server, int client_ind, te_server_fsm_state next_state);
 te_server_fsm_state HANDLE_CLOSE(server_t* server, int client_ind, te_server_fsm_state next_state);
 
 #endif

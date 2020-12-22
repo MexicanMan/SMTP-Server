@@ -33,6 +33,7 @@
 
 #define START_MAIL_RESP "354 Start mail input; end with <CRLF>.<CRLF>\r\n"
 
+#define TIMEOUT_RESP "421 Service is unavailable because the server is shutting down.\r\n"
 #define STORAGE_RESP "452 Requested action not taken: insufficient system storage\r\n"
 
 #define BAD_CMD_RESP "500 Syntax error, command unrecognised\r\n"

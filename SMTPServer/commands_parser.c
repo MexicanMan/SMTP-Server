@@ -112,7 +112,7 @@ int helo_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
     // Ignore domain as long as it isn't used for now
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_HELO, client_ind, server, NULL, 0);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "helo_handle prepare_send_buf");
             return -1;
         }
@@ -132,7 +132,7 @@ int ehlo_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
     // Ignore domain as long as it isn't used for now
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_EHLO, client_ind, server, NULL, 0);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "ehlo_handle prepare_send_buf");
             return -1;
         }
@@ -151,7 +151,7 @@ int mail_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
     // Pass msg as it should be address
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_MAIL, client_ind, server, msg, msg_len);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "mail_handle prepare_send_buf");
             return -1;
         }
@@ -170,7 +170,7 @@ int rcpt_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
     // Pass msg as it should be address
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_RCPT, client_ind, server, msg, msg_len);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "rcpt_handle prepare_send_buf");
             return -1;
         }
