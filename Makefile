@@ -27,7 +27,14 @@ server_build_dir:
 # Коля сюда добавь свое
 .PHONY: client
 client: client_build_dir 
-	echo client
+	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile 
+
+server-test: client_build_dir
+	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test
+
+server-test-run: client_build_dir
+	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test-run
+
 
 client_build_dir:
 	mkdir -p $(client_dir)/$(build_dir)
@@ -40,4 +47,4 @@ server_clean:
 
 # Коля сюда добавь свое
 client_clean:
-	echo client_clean 
+	cd $(server_dir) && make clean
