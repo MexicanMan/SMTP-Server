@@ -107,7 +107,7 @@ void parser_finalize() {
 
 int helo_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Ignore domain as long as it isn't used for now
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_HELO, client_ind, server, NULL, 0);
@@ -126,7 +126,7 @@ int helo_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int ehlo_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Currently similar to helo
     // Ignore domain as long as it isn't used for now
@@ -146,7 +146,7 @@ int ehlo_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int mail_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Pass msg as it should be address
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_MAIL, client_ind, server, msg, msg_len);
@@ -165,7 +165,7 @@ int mail_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int rcpt_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Pass msg as it should be address
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_RCPT, client_ind, server, msg, msg_len);
@@ -184,7 +184,7 @@ int rcpt_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int data_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Ignore arguments if there is some
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_DATA, client_ind, server, NULL, 0);
@@ -198,7 +198,7 @@ int data_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int rset_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Ignore arguments if there is some
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_RSET, client_ind, server, NULL, 0);
@@ -212,7 +212,7 @@ int rset_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int quit_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Ignore arguments if there is some
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_QUIT, client_ind, server, NULL, 0);
@@ -226,7 +226,7 @@ int quit_handle(const char* msg, int msg_len, server_t* server, int client_ind) 
 
 int vrfy_handle(const char* msg, int msg_len, server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     // Ignore arguments as long as they aren't used for now
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CMD_VRFY, client_ind, server, NULL, 0);

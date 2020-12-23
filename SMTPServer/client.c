@@ -84,7 +84,7 @@ void client_dict_free(server_client_dict_t** dict) {
     }   
 }
 
-server_client_t* get_item(server_client_dict_t* dict, int key) {
+server_client_t* get_client_by_key(server_client_dict_t* dict, int key) {
     server_client_dict_t *ptr;
 
     for (ptr = dict; ptr != NULL; ptr = ptr->next) {
@@ -96,7 +96,7 @@ server_client_t* get_item(server_client_dict_t* dict, int key) {
     return NULL;
 }
 
-int del_item(server_client_dict_t** dict, int key) {
+int del_client_by_key(server_client_dict_t** dict, int key) {
     server_client_dict_t *ptr, *prev;
 
     for (ptr = *dict, prev = NULL; ptr != NULL; prev = ptr, ptr = ptr->next) {
@@ -127,8 +127,8 @@ int del_item(server_client_dict_t** dict, int key) {
     return -1;
 }
 
-int add_item(server_client_dict_t** dict, int key, server_client_t value) {
-    if (get_item(*dict, key) != NULL)
+int add_client_by_key(server_client_dict_t** dict, int key, server_client_t value) {
+    if (get_client_by_key(*dict, key) != NULL)
         return -1;
 
     server_client_dict_t *new_dict_head = (server_client_dict_t*) malloc(sizeof(server_client_dict_t));

@@ -1,6 +1,6 @@
-program_name := server
+program_name = server
 full_program_name := $(addprefix $(exe_directory),$(program_name)) 
-source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger tests
+source_dirs := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger tests
 version := -std=c99
 
 cflags:= -Wall -pedantic -Werror

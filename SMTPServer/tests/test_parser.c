@@ -28,7 +28,7 @@ int init_parser_suite() {
     server_mock->fd_max = 0;
     server_mock->clients = NULL;
     server_client_t client_mock = empty_client();
-    add_item(&server_mock->clients, KEY, client_mock);
+    add_client_by_key(&server_mock->clients, KEY, client_mock);
     server_mock->logger = logger_init(".", 0);
 
     parser_initalize(NULL);

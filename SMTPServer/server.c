@@ -368,7 +368,7 @@ int server_serve_client(server_t* server, int client_ind) {
     char buf[READBUF_SIZE]; 
 
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     int len = recv(client_d, buf, READBUF_SIZE, 0);
     if (len > 0) {
@@ -391,7 +391,7 @@ int server_serve_client(server_t* server, int client_ind) {
 
 int server_send_client(server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     int send_len = send(client_d, client->out_buf, client->out_len, 0);
     if (send_len != client->out_len) {
@@ -415,7 +415,7 @@ int server_send_client(server_t* server, int client_ind) {
 
 int server_lost_client_timeout(server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_TIMEOUT, client_ind, server, NULL, 0);
     if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
