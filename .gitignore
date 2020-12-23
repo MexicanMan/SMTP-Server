@@ -63,4 +63,6 @@ server
 
 *.log
 *.mail
-rpz
+rpz/tex/include
+doxygen
+dot
