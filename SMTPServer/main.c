@@ -1,3 +1,8 @@
+/** 
+ * @file
+ * @brief Main entry point file
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -20,16 +25,19 @@
 
 #define SERVER_DOMAIN "@arasaka.com"
 
+/**
+ * @brief Server options struct
+ */
 typedef struct options_struct {
-    const char* address;
-    int port;
+    const char* address;            ///< Server address
+    int port;                       ///< Server port
 
-    const char* log_dir;
-    const char* maildir;
-    const char* client_mail_dir;
+    const char* log_dir;            ///< Directory to store log files
+    const char* maildir;            ///< Directory with local mails
+    const char* client_mail_dir;    ///< Directory with mail to client
 } options_t;
 
-static int pipe_fd[2];  // Pipe file descriptors for graceful exit
+static int pipe_fd[2];  ///< Pipe file descriptors for graceful exit
 
 /**
  * @brief Signals handler (SIGINT and SIGTERM) for graceful exit
@@ -61,6 +69,9 @@ int validate_options(options_t options) {
     return 0;
 }
 
+/**
+ * @brief Main entry point
+ */
 int main(int argc, char **argv) {
     #ifdef DEBUG
         printf("Starting program..\n");

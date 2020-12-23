@@ -5,20 +5,26 @@
 
 #include "autogen/server-fsm.h"
 
+/**
+ * @brief Client struct
+ */
 typedef struct server_client_struct {
-    te_server_fsm_state client_state;
+    te_server_fsm_state client_state;   ///< Current client state
 
-    char* inp_buf;
-    char* out_buf;
+    char* inp_buf;                      ///< Client input buffer (read)
+    char* out_buf;                      ///< Client output buffer (write)
     int inp_len;
     int out_len;
 
-    mail_t mail;
+    mail_t mail;                        ///< Client current mail
 } server_client_t;
 
+/**
+ * @brief Fd-client dictionary
+ */
 typedef struct server_client_dict_struct {
-	int key;
-	server_client_t value;
+	int key;                                    ///< Fd of client
+	server_client_t value;                      ///< Client itself
 
     struct server_client_dict_struct *next;
 } server_client_dict_t;
