@@ -52,20 +52,21 @@
  *  Enumeration of each option type for server
  */
 typedef enum {
-    INDEX_OPT_PORT             =  0,
-    INDEX_OPT_LOG_DIR          =  1,
-    INDEX_OPT_MAIL_DIR         =  2,
-    INDEX_OPT_CLIENT_MAIL_DIR  =  3,
-    INDEX_OPT_HELP             =  4,
-    INDEX_OPT_MORE_HELP        =  5
+    INDEX_OPT_ADDRESS          =  0,
+    INDEX_OPT_PORT             =  1,
+    INDEX_OPT_LOG_DIR          =  2,
+    INDEX_OPT_MAIL_DIR         =  3,
+    INDEX_OPT_CLIENT_MAIL_DIR  =  4,
+    INDEX_OPT_HELP             =  5,
+    INDEX_OPT_MORE_HELP        =  6
 } teOptIndex;
 /** count of all options for server */
-#define OPTION_CT    6
+#define OPTION_CT    7
 
 /**
  *  Interface defines for all options.  Replace "n" with the UPPER_CASED
  *  option name (as in the teOptIndex enumeration above).
- *  e.g. HAVE_OPT(PORT)
+ *  e.g. HAVE_OPT(ADDRESS)
  */
 #define         DESC(n) (serverOptions.pOptDesc[INDEX_OPT_## n])
 /** 'true' if an option has been specified in any way */
@@ -111,6 +112,7 @@ typedef enum {
  *  Interface defines for specific options.
  * @{
  */
+#define VALUE_OPT_ADDRESS        'a'
 #define VALUE_OPT_PORT           'p'
 
 #define OPT_VALUE_PORT           (DESC(PORT).optArg.argInt)

@@ -52,7 +52,7 @@ void test_client_add_data() {
 
 void test_add_item() {
     int key = 1;
-    int res = add_item(&clients_mock, key, empty_client());
+    int res = add_client_by_key(&clients_mock, key, empty_client());
 
     CU_ASSERT_EQUAL_FATAL(res, 0);
     CU_ASSERT_PTR_NOT_NULL(clients_mock);
@@ -60,13 +60,13 @@ void test_add_item() {
 }
 
 void test_get_item() {
-    server_client_t* res = get_item(clients_mock, 1);
+    server_client_t* res = get_client_by_key(clients_mock, 1);
 
     CU_ASSERT_PTR_NOT_NULL_FATAL(res);
 }
 
 void test_del_item() {
-    int res = del_item(&clients_mock, 1);
+    int res = del_client_by_key(&clients_mock, 1);
 
     CU_ASSERT_EQUAL_FATAL(res, 0);
     CU_ASSERT_PTR_NULL_FATAL(clients_mock);

@@ -50,14 +50,14 @@ int client_add_data(server_client_t* client, const char* data, int len) {
     return concat_dynamic_strings(&client->mail.data, data, 0, len + 1);
 }
 
-int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir) {
+int client_save_mail(server_client_t* client, const char* maildir, const char* client_mail_dir, const char* domain) {
     if (client->mail.to_type == MAIL_NONE)
         return -1;  // assert?
 
     int res = 0;
 
     if (client->mail.to_type & LOCAL_MAIL) {
-        res = save_mail(maildir, strlen(maildir), client->mail);
+        res = save_local_mail(maildir, strlen(maildir), domain, client->mail);
     } 
 
     if (client->mail.to_type & DISTANT_MAIL && !res) {
@@ -84,7 +84,7 @@ void client_dict_free(server_client_dict_t** dict) {
     }   
 }
 
-server_client_t* get_item(server_client_dict_t* dict, int key) {
+server_client_t* get_client_by_key(server_client_dict_t* dict, int key) {
     server_client_dict_t *ptr;
 
     for (ptr = dict; ptr != NULL; ptr = ptr->next) {
@@ -96,7 +96,7 @@ server_client_t* get_item(server_client_dict_t* dict, int key) {
     return NULL;
 }
 
-int del_item(server_client_dict_t** dict, int key) {
+int del_client_by_key(server_client_dict_t** dict, int key) {
     server_client_dict_t *ptr, *prev;
 
     for (ptr = *dict, prev = NULL; ptr != NULL; prev = ptr, ptr = ptr->next) {
@@ -127,8 +127,8 @@ int del_item(server_client_dict_t** dict, int key) {
     return -1;
 }
 
-int add_item(server_client_dict_t** dict, int key, server_client_t value) {
-    if (get_item(*dict, key) != NULL)
+int add_client_by_key(server_client_dict_t** dict, int key, server_client_t value) {
+    if (get_client_by_key(*dict, key) != NULL)
         return -1;
 
     server_client_dict_t *new_dict_head = (server_client_dict_t*) malloc(sizeof(server_client_dict_t));

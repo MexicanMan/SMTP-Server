@@ -1,3 +1,8 @@
+/** 
+ * @file
+ * @brief Main entry point file
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -5,7 +10,6 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <signal.h>
-#include <sys/stat.h>
 
 #include "server.h"
 
@@ -13,6 +17,7 @@
 
 #include "../SMTPShared/error/error.h"
 #include "../SMTPShared/logger/logger.h"
+#include "../SMTPShared/dir_helper.h"
 
 #define BASE_LOG_DIR "./log"
 #define BASE_MAIL_DIR "./mail"
@@ -20,15 +25,19 @@
 
 #define SERVER_DOMAIN "@arasaka.com"
 
+/**
+ * @brief Server options struct
+ */
 typedef struct options_struct {
-    int port;
+    const char* address;            ///< Server address
+    int port;                       ///< Server port
 
-    const char* log_dir;
-    const char* maildir;
-    const char* client_mail_dir;
+    const char* log_dir;            ///< Directory to store log files
+    const char* maildir;            ///< Directory with local mails
+    const char* client_mail_dir;    ///< Directory with mail to client
 } options_t;
 
-static int pipe_fd[2];  // Pipe file descriptors for graceful exit
+static int pipe_fd[2];  ///< Pipe file descriptors for graceful exit
 
 /**
  * @brief Signals handler (SIGINT and SIGTERM) for graceful exit
@@ -41,21 +50,12 @@ void int_handler(int dummy) {
 }
 
 options_t fill_options() {
-    options_t options = { .port = OPT_VALUE_PORT };
+    options_t options = { .address = OPT_ARG(ADDRESS), .port = OPT_VALUE_PORT };
     options.log_dir = HAVE_OPT(LOG_DIR) ? OPT_ARG(LOG_DIR) : BASE_LOG_DIR;
     options.maildir = HAVE_OPT(MAIL_DIR) ? OPT_ARG(MAIL_DIR) : BASE_MAIL_DIR;
     options.client_mail_dir = HAVE_OPT(CLIENT_MAIL_DIR) ? OPT_ARG(CLIENT_MAIL_DIR) : BASE_CLIENT_MAIL_DIR;    
 
     return options;
-}
-
-int create_dir_if_not_exists(const char* path) {
-    struct stat st;
-    if (stat(path, &st) == -1)
-        if (mkdir(path, 0700) == -1)
-            return -1;
-    
-    return 0;
 }
 
 int validate_options(options_t options) {
@@ -69,6 +69,9 @@ int validate_options(options_t options) {
     return 0;
 }
 
+/**
+ * @brief Main entry point
+ */
 int main(int argc, char **argv) {
     #ifdef DEBUG
         printf("Starting program..\n");
@@ -85,7 +88,7 @@ int main(int argc, char **argv) {
     signal(SIGINT, int_handler);
     signal(SIGTERM, int_handler);
 
-    logger_t* logger = logger_init(options.log_dir, CONSOLE_PRINT);
+    logger_t* logger = logger_init(options.log_dir, CONSOLE_PRINT | FILE_PRINT);
     if (!logger) {
         close(pipe_fd[0]);
         close(pipe_fd[1]);
@@ -93,7 +96,7 @@ int main(int argc, char **argv) {
         exit_on_error("logger_init");
     }
 
-    server_t* server = server_init(logger, options.port, SERVER_DOMAIN, 
+    server_t* server = server_init(logger, options.address, options.port, SERVER_DOMAIN, 
         options.maildir, options.client_mail_dir, pipe_fd[0]);
     if (server) {
         server_main(server);

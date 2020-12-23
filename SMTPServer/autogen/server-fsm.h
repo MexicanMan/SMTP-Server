@@ -54,13 +54,14 @@
  *  Count of non-terminal states.  The generated states INVALID and DONE
  *  are terminal, but INIT is not  :-).
  */
-#define SERVER_FSM_STATE_CT  8
+#define SERVER_FSM_STATE_CT  9
 typedef enum {
     SERVER_FSM_ST_INIT,         SERVER_FSM_ST_READY,
     SERVER_FSM_ST_HELLO,        SERVER_FSM_ST_MAIL_FROM,
     SERVER_FSM_ST_RCPT_TO,      SERVER_FSM_ST_DATA,
-    SERVER_FSM_ST_QUIT,         SERVER_FSM_ST_SERVER_ERROR,
-    SERVER_FSM_ST_INVALID,      SERVER_FSM_ST_DONE
+    SERVER_FSM_ST_QUIT,         SERVER_FSM_ST_TIMEOUT,
+    SERVER_FSM_ST_SERVER_ERROR, SERVER_FSM_ST_INVALID,
+    SERVER_FSM_ST_DONE
 } te_server_fsm_state;
 
 /**
@@ -68,14 +69,15 @@ typedef enum {
  *
  *  Count of the valid transition events
  */
-#define SERVER_FSM_EVENT_CT 11
+#define SERVER_FSM_EVENT_CT 12
 typedef enum {
     SERVER_FSM_EV_CONNECTION_ACCEPTED, SERVER_FSM_EV_CMD_HELO,
     SERVER_FSM_EV_CMD_EHLO,            SERVER_FSM_EV_CMD_MAIL,
     SERVER_FSM_EV_CMD_RCPT,            SERVER_FSM_EV_CMD_DATA,
     SERVER_FSM_EV_CMD_RSET,            SERVER_FSM_EV_CMD_VRFY,
     SERVER_FSM_EV_CMD_QUIT,            SERVER_FSM_EV_MAIL_END,
-    SERVER_FSM_EV_CONNECTION_LOST,     SERVER_FSM_EV_INVALID
+    SERVER_FSM_EV_CONNECTION_TIMEOUT,  SERVER_FSM_EV_CONNECTION_LOST,
+    SERVER_FSM_EV_INVALID
 } te_server_fsm_event;
 
 /**

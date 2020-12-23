@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/server",
-            "args": ["-p", "8080", "-l", "./log", "-d", "./maildir"],
+            "args": ["-a", "0.0.0.0", "-p", "8080", "-l", "./log", "-d", "./mail"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

@@ -14,22 +14,28 @@
 
 #define POLL_WAIT 1000
 #define READBUF_SIZE 20
+#define CLIENT_TIMEOUT 300
 
-int server_create_and_biding(int port);
+int server_create_and_biding(const char* address, int port);
+int server_process_pollfds(server_t* server);
 int server_add_client(server_t* server);
 int server_serve_client(server_t* server, int client_ind);
 int server_send_client(server_t* server, int client_ind);
+int server_lost_client_timeout(server_t* server, int client_ind);
 
 /**
  * @brief Initialize smtp server
  * @param logger Logger
+ * @param address Address
  * @param port Port
- * @param mail_dir Directory with local mails
+ * @param domain Mail domain
+ * @param maildir Directory with local mails
+ * @param client_mail_dir Directory with mails to client
  * @param exit_pipefd Pipe fd for graceful exit 
  * @return Server
  */
-server_t* server_init(logger_t* logger, int port, const char* domain, const char* maildir, 
-                      const char* client_mail_dir, int exit_pipefd) {
+server_t* server_init(logger_t* logger, const char* address, int port, const char* domain, 
+                      const char* maildir, const char* client_mail_dir, int exit_pipefd) {
     int sock_d;
     
     logger_log(logger, INFO_LOG, "Initializing server...");
@@ -48,7 +54,7 @@ server_t* server_init(logger_t* logger, int port, const char* domain, const char
 
     server->logger = logger;
 
-    if ((sock_d = server_create_and_biding(port)) < 0) {
+    if ((sock_d = server_create_and_biding(address, port)) < 0) {
         logger_log(logger, ERROR_LOG, "server_init server_create_and_biding");
         free(server);
         parser_finalize();
@@ -69,7 +75,8 @@ server_t* server_init(logger_t* logger, int port, const char* domain, const char
 }
 
 /**
- * @brief Main server loop
+ * @brief Server main loop
+ * @param server Server
  */
 int server_main(server_t* server) {
     if (listen(server->fds[POLL_SERVER_IND].fd, SOMAXCONN) < 0) {
@@ -86,38 +93,17 @@ int server_main(server_t* server) {
         if (poll_res < -1) {
             logger_log(server->logger, WARNING_LOG, "server_main poll");
         } else if (poll_res > 0) {
-            if (server->fds[POLL_PIPEFD_IND].revents & POLLIN) {
-                server->fds[POLL_PIPEFD_IND].revents = 0;
+            if (server_process_pollfds(server) < 0)
                 is_running = 0;
-            } else {
-                if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
-                    server->fds[POLL_SERVER_IND].revents = 0;
-    
-                    if (server_add_client(server) < 0) {
-                        logger_log(server->logger, ERROR_LOG, "server_main server_add_client");
-                        break;
-                    }
-                }
+        }
 
-                for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
-                    if (server->fds[i].revents & POLLIN) {
-                        if (server_serve_client(server, i) < 0) {
-                            logger_log(server->logger, ERROR_LOG, "server_main server_serve_client");
-                            is_running = 0;
-                            break;
-                        }
-                    }
-
-                    if (server->fds[i].revents & POLLOUT) {
-                        if (server_send_client(server, i) < 0) {
-                            logger_log(server->logger, ERROR_LOG, "server_main server_send_client");
-                            is_running = 0;
-                            break;
-                        }
-                    }
-
-                    server->fds[i].revents = 0;
-                }
+        for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+            if (server->fds_timeouts[i]++ != CLIENT_TIMEOUT) 
+                continue;
+            
+            if (server_lost_client_timeout(server, i) < 0) {
+                is_running = 0;
+                break;
             }
         }
     }
@@ -129,6 +115,7 @@ int server_main(server_t* server) {
 
 /**
  * @brief Finaize server
+ * @param server Server
  */
 void server_finalize(server_t* server) {
     logger_log(server->logger, INFO_LOG, "Closing all connections...");
@@ -147,31 +134,52 @@ void server_finalize(server_t* server) {
     free(server);
 }
 
+/**
+ * @brief Fill new pollfd struct with initial value
+ * @param server Server
+ * @param fd Client socket fd
+ * @param ind Index of new client
+ */
 void server_fill_pollfd(server_t* server, int fd, int ind) {
     server->fds[ind].fd = fd;
     server->fds[ind].events = POLLIN;
     server->fds[ind].revents = 0;
+    server->fds_timeouts[ind] = 0;
 
     server->fd_max++;
 }
 
-int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, int len) {
+/**
+ * @brief Fill client output buffer to send it later
+ * @param client_fd Client pollfd to change events
+ * @param client Client
+ * @param msg Message to send
+ * @param len Length of message
+ * @param is_final Is it final message to client
+ */
+int prepare_send_buf(struct pollfd* client_fd, server_client_t* client, const char* msg, 
+                     int len, int is_final) {
     if (concat_dynamic_strings(&client->out_buf, msg, client->out_len, len) < 0)
         return -1;
 
     client->out_len += len;
 
-    client_fd->events |= POLLOUT;
+    // If it is final - block receive, because client should leave after this message
+    if (!is_final)
+        client_fd->events |= POLLOUT;
+    else
+        client_fd->events = POLLOUT;
 
     return 0;
 } 
 
 /**
  * @brief Create and bind server socket
+ * @param address Server address
  * @param port Server port
  * @return Server socket or error in cases of < 0 
  */
-int server_create_and_biding(int port) {
+int server_create_and_biding(const char* address, int port) {
     int sock_d;                 // Server fd
     struct sockaddr_in addr;    // Server address
     int option = 1;             // Option for SO_REUSEADDR
@@ -187,7 +195,7 @@ int server_create_and_biding(int port) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr("0.0.0.0");
+    addr.sin_addr.s_addr = inet_addr(address);
     addr.sin_port = htons(port);
  
     if (bind(sock_d, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
@@ -198,6 +206,50 @@ int server_create_and_biding(int port) {
     return sock_d;
 }
 
+/**
+ * @brief Process pollfd array and check for read/write actions
+ */
+int server_process_pollfds(server_t* server) {
+    if (server->fds[POLL_PIPEFD_IND].revents & POLLIN) {
+        server->fds[POLL_PIPEFD_IND].revents = 0;
+        return -1;
+    }
+
+    if (server->fds[POLL_SERVER_IND].revents & POLLIN) {
+        server->fds[POLL_SERVER_IND].revents = 0;
+
+        if (server_add_client(server) < 0) {
+            logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_add_client");
+            return -1;
+        }
+    }
+
+    for (int i = POLL_CLIENTS_IND; i < server->fd_max; i++) {
+        if (server->fds[i].revents & POLLIN) {
+            server->fds_timeouts[i] = 0;
+
+            if (server_serve_client(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_serve_client");
+                return -1;
+            }
+        }
+
+        if (server->fds[i].revents & POLLOUT) {
+            if (server_send_client(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_process_pollfds server_send_client");
+                return -1;
+            }
+        }
+
+        server->fds[i].revents = 0;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Add new client connection
+ */
 int server_add_client(server_t* server) {
     logger_log(server->logger, INFO_LOG, "Accepting new client");
 
@@ -224,7 +276,7 @@ int server_add_client(server_t* server) {
 int server_input_command_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int parse_res = commands_parse(msg, msg_len, server, client_ind);
     if (parse_res == 0) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_command_handle prepare_send_buf");
             return -1;
         }
@@ -264,7 +316,7 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
 int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_MAIL_END, client_ind, server, msg, msg_len);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP)) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_mail_handle prepare_send_buf");
             return -1;
         }
@@ -337,11 +389,16 @@ int server_handle_input(server_t* server, int client_ind, server_client_t* clien
     return 0;
 }
 
+/**
+ * @brief Process input from client
+ * @param server Server
+ * @param client_ind Index of client in pollfd array
+ */
 int server_serve_client(server_t* server, int client_ind) {
     char buf[READBUF_SIZE]; 
 
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     int len = recv(client_d, buf, READBUF_SIZE, 0);
     if (len > 0) {
@@ -362,9 +419,14 @@ int server_serve_client(server_t* server, int client_ind) {
     return len;
 }
 
+/**
+ * @brief Process output to client
+ * @param server Server
+ * @param client_ind Index of client in pollfd array
+ */
 int server_send_client(server_t* server, int client_ind) {
     int client_d = server->fds[client_ind].fd;
-    server_client_t* client = get_item(server->clients, client_d);
+    server_client_t* client = get_client_by_key(server->clients, client_d);
 
     int send_len = send(client_d, client->out_buf, client->out_len, 0);
     if (send_len != client->out_len) {
@@ -379,9 +441,27 @@ int server_send_client(server_t* server, int client_ind) {
         server->fds[client_ind].events = POLLIN;
 
         // Check if we sent some client last "goodbye" message
-        if (client->client_state == SERVER_FSM_ST_QUIT)
+        if (client->client_state == SERVER_FSM_ST_QUIT || client->client_state == SERVER_FSM_ST_TIMEOUT)
             server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server, NULL, 0);
     }
 
     return send_len;
+}
+
+/**
+ * @brief Handle timeout connection action
+ * @param server Server
+ * @param client_ind Index of client in pollfd array
+ */
+int server_lost_client_timeout(server_t* server, int client_ind) {
+    int client_d = server->fds[client_ind].fd;
+    server_client_t* client = get_client_by_key(server->clients, client_d);
+
+    int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_TIMEOUT, client_ind, server, NULL, 0);
+    if (new_state == SERVER_FSM_ST_SERVER_ERROR) {
+        logger_log(server->logger, ERROR_LOG, "server_lost_client_timeout server_fsm_step");
+        return -1;
+    }
+
+    return 0;
 }

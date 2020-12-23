@@ -2,12 +2,16 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #include "mail.h"
+
+#include "../SMTPShared/dir_helper.h"
 
 #define FROM_HEADER "X-FROM:"
 #define TO_HEADER "X-TO:"
 #define MAIL_EXT ".mail"
+#define MAILDIR "/Maildir"
 
 mail_t empty_mail() {
     mail_t mail = {
@@ -75,6 +79,30 @@ int save_mail(const char* path, int len, mail_t mail) {
     }
 
     free(filename);
+
+    return res;
+}
+
+int save_local_mail(const char* path, int len, const char* domain, mail_t mail) {
+    int res = 0;
+
+    for (int i = 0; i < mail.to_len && !res; i++) {
+        char* to_domain = strstr(mail.to[i], domain);
+        if (to_domain) {
+            char* username = mail.to[i] + 1;  // As first symbol should be <
+            int user_len = to_domain - username + 1;
+            char user[user_len];
+            snprintf(user, user_len, "%s", username);
+
+            int user_path_len = user_len + len + sizeof(MAILDIR);
+            char user_path[user_path_len], full_user_path[user_path_len];
+            snprintf(user_path, user_path_len, "%s/%s", path, user);  // Concat mail dir with user dir first
+            snprintf(full_user_path, user_path_len, "%s%s", user_path, MAILDIR);  // Then concat ^ with MAILDIR
+
+            if (!(res = create_dir_if_not_exists(user_path)) && !(res = create_dir_if_not_exists(full_user_path)))
+                res = save_mail(full_user_path, user_path_len, mail);
+        }
+    }
 
     return res;
 }

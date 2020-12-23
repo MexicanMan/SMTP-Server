@@ -45,36 +45,52 @@ extern FILE * option_usage_fp;
 /**
  *  static const strings for server options
  */
-static char const server_opt_strs[370] =
-/*     0 */ "Port to bind\0"
-/*    13 */ "PORT\0"
-/*    18 */ "port\0"
-/*    23 */ "Path to the log directory\0"
-/*    49 */ "LOG_DIR\0"
-/*    57 */ "log-dir\0"
-/*    65 */ "Path to the maildir directory\0"
-/*    95 */ "MAIL_DIR\0"
-/*   104 */ "mail-dir\0"
-/*   113 */ "Path to the client mails directory\0"
-/*   148 */ "CLIENT_MAIL_DIR\0"
-/*   164 */ "client-mail-dir\0"
-/*   180 */ "display extended usage information and exit\0"
-/*   224 */ "help\0"
-/*   229 */ "extended usage information passed thru pager\0"
-/*   274 */ "more-help\0"
-/*   284 */ "SERVER\0"
-/*   291 */ "server - SMTP server\n"
+static char const server_opt_strs[402] =
+/*     0 */ "Address to bind\0"
+/*    16 */ "ADDRESS\0"
+/*    24 */ "address\0"
+/*    32 */ "Port to bind\0"
+/*    45 */ "PORT\0"
+/*    50 */ "port\0"
+/*    55 */ "Path to the log directory\0"
+/*    81 */ "LOG_DIR\0"
+/*    89 */ "log-dir\0"
+/*    97 */ "Path to the maildir directory\0"
+/*   127 */ "MAIL_DIR\0"
+/*   136 */ "mail-dir\0"
+/*   145 */ "Path to the client mails directory\0"
+/*   180 */ "CLIENT_MAIL_DIR\0"
+/*   196 */ "client-mail-dir\0"
+/*   212 */ "display extended usage information and exit\0"
+/*   256 */ "help\0"
+/*   261 */ "extended usage information passed thru pager\0"
+/*   306 */ "more-help\0"
+/*   316 */ "SERVER\0"
+/*   323 */ "server - SMTP server\n"
             "Usage:  %s { -<flag> [<val>] | --<name>[{=| }<val>] }...\n";
+
+/**
+ *  address option description:
+ */
+/** Descriptive text for the address option */
+#define ADDRESS_DESC      (server_opt_strs+0)
+/** Upper-cased name for the address option */
+#define ADDRESS_NAME      (server_opt_strs+16)
+/** Name string for the address option */
+#define ADDRESS_name      (server_opt_strs+24)
+/** Compiled in flag settings for the address option */
+#define ADDRESS_FLAGS     (OPTST_DISABLED \
+        | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
 
 /**
  *  port option description:
  */
 /** Descriptive text for the port option */
-#define PORT_DESC      (server_opt_strs+0)
+#define PORT_DESC      (server_opt_strs+32)
 /** Upper-cased name for the port option */
-#define PORT_NAME      (server_opt_strs+13)
+#define PORT_NAME      (server_opt_strs+45)
 /** Name string for the port option */
-#define PORT_name      (server_opt_strs+18)
+#define PORT_name      (server_opt_strs+50)
 /** Compiled in flag settings for the port option */
 #define PORT_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_NUMERIC))
@@ -83,11 +99,11 @@ static char const server_opt_strs[370] =
  *  log_dir option description:
  */
 /** Descriptive text for the log_dir option */
-#define LOG_DIR_DESC      (server_opt_strs+23)
+#define LOG_DIR_DESC      (server_opt_strs+55)
 /** Upper-cased name for the log_dir option */
-#define LOG_DIR_NAME      (server_opt_strs+49)
+#define LOG_DIR_NAME      (server_opt_strs+81)
 /** Name string for the log_dir option */
-#define LOG_DIR_name      (server_opt_strs+57)
+#define LOG_DIR_name      (server_opt_strs+89)
 /** Compiled in flag settings for the log_dir option */
 #define LOG_DIR_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -96,11 +112,11 @@ static char const server_opt_strs[370] =
  *  mail_dir option description:
  */
 /** Descriptive text for the mail_dir option */
-#define MAIL_DIR_DESC      (server_opt_strs+65)
+#define MAIL_DIR_DESC      (server_opt_strs+97)
 /** Upper-cased name for the mail_dir option */
-#define MAIL_DIR_NAME      (server_opt_strs+95)
+#define MAIL_DIR_NAME      (server_opt_strs+127)
 /** Name string for the mail_dir option */
-#define MAIL_DIR_name      (server_opt_strs+104)
+#define MAIL_DIR_name      (server_opt_strs+136)
 /** Compiled in flag settings for the mail_dir option */
 #define MAIL_DIR_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -109,11 +125,11 @@ static char const server_opt_strs[370] =
  *  client_mail_dir option description:
  */
 /** Descriptive text for the client_mail_dir option */
-#define CLIENT_MAIL_DIR_DESC      (server_opt_strs+113)
+#define CLIENT_MAIL_DIR_DESC      (server_opt_strs+145)
 /** Upper-cased name for the client_mail_dir option */
-#define CLIENT_MAIL_DIR_NAME      (server_opt_strs+148)
+#define CLIENT_MAIL_DIR_NAME      (server_opt_strs+180)
 /** Name string for the client_mail_dir option */
-#define CLIENT_MAIL_DIR_name      (server_opt_strs+164)
+#define CLIENT_MAIL_DIR_name      (server_opt_strs+196)
 /** Compiled in flag settings for the client_mail_dir option */
 #define CLIENT_MAIL_DIR_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -121,11 +137,11 @@ static char const server_opt_strs[370] =
 /*
  *  Help/More_Help option descriptions:
  */
-#define HELP_DESC       (server_opt_strs+180)
-#define HELP_name       (server_opt_strs+224)
+#define HELP_DESC       (server_opt_strs+212)
+#define HELP_name       (server_opt_strs+256)
 #ifdef HAVE_WORKING_FORK
-#define MORE_HELP_DESC  (server_opt_strs+229)
-#define MORE_HELP_name  (server_opt_strs+274)
+#define MORE_HELP_DESC  (server_opt_strs+261)
+#define MORE_HELP_name  (server_opt_strs+306)
 #define MORE_HELP_FLAGS (OPTST_IMM | OPTST_NO_INIT)
 #else
 #define MORE_HELP_DESC  HELP_DESC
@@ -150,8 +166,20 @@ static tOptProc
  * option that the server program responds to.
  */
 static tOptDesc optDesc[OPTION_CT] = {
-  {  /* entry idx, value */ 0, VALUE_OPT_PORT,
-     /* equiv idx, value */ 0, VALUE_OPT_PORT,
+  {  /* entry idx, value */ 0, VALUE_OPT_ADDRESS,
+     /* equiv idx, value */ 0, VALUE_OPT_ADDRESS,
+     /* equivalenced to  */ NO_EQUIVALENT,
+     /* min, max, act ct */ 1, 1, 0,
+     /* opt state flags  */ ADDRESS_FLAGS, 0,
+     /* last opt argumnt */ { NULL }, /* --address */
+     /* arg list/cookie  */ NULL,
+     /* must/cannot opts */ NULL, NULL,
+     /* option proc      */ NULL,
+     /* desc, NAME, name */ ADDRESS_DESC, ADDRESS_NAME, ADDRESS_name,
+     /* disablement strs */ NULL, NULL },
+
+  {  /* entry idx, value */ 1, VALUE_OPT_PORT,
+     /* equiv idx, value */ 1, VALUE_OPT_PORT,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 1, 1, 0,
      /* opt state flags  */ PORT_FLAGS, 0,
@@ -162,8 +190,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ PORT_DESC, PORT_NAME, PORT_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 1, VALUE_OPT_LOG_DIR,
-     /* equiv idx, value */ 1, VALUE_OPT_LOG_DIR,
+  {  /* entry idx, value */ 2, VALUE_OPT_LOG_DIR,
+     /* equiv idx, value */ 2, VALUE_OPT_LOG_DIR,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ LOG_DIR_FLAGS, 0,
@@ -174,8 +202,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ LOG_DIR_DESC, LOG_DIR_NAME, LOG_DIR_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 2, VALUE_OPT_MAIL_DIR,
-     /* equiv idx, value */ 2, VALUE_OPT_MAIL_DIR,
+  {  /* entry idx, value */ 3, VALUE_OPT_MAIL_DIR,
+     /* equiv idx, value */ 3, VALUE_OPT_MAIL_DIR,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ MAIL_DIR_FLAGS, 0,
@@ -186,8 +214,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ MAIL_DIR_DESC, MAIL_DIR_NAME, MAIL_DIR_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 3, VALUE_OPT_CLIENT_MAIL_DIR,
-     /* equiv idx, value */ 3, VALUE_OPT_CLIENT_MAIL_DIR,
+  {  /* entry idx, value */ 4, VALUE_OPT_CLIENT_MAIL_DIR,
+     /* equiv idx, value */ 4, VALUE_OPT_CLIENT_MAIL_DIR,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ CLIENT_MAIL_DIR_FLAGS, 0,
@@ -226,9 +254,9 @@ static tOptDesc optDesc[OPTION_CT] = {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /** Reference to the upper cased version of server. */
-#define zPROGNAME       (server_opt_strs+284)
+#define zPROGNAME       (server_opt_strs+316)
 /** Reference to the title line for server usage. */
-#define zUsageTitle     (server_opt_strs+291)
+#define zUsageTitle     (server_opt_strs+323)
 /** There is no server configuration file. */
 #define zRcName         NULL
 /** There are no directories to search for server config files. */
@@ -374,7 +402,7 @@ tOptions serverOptions = {
       NO_EQUIVALENT, /* '-#' option index */
       NO_EQUIVALENT /* index of default opt */
     },
-    6 /* full option count */, 4 /* user option count */,
+    7 /* full option count */, 5 /* user option count */,
     server_full_usage, server_short_usage,
     NULL, NULL,
     PKGDATADIR, server_packager_info
@@ -508,6 +536,9 @@ static void bogus_function(void) {
      by name.  These are set off with apostrophe quotes (I hope).  Do not
      translate option names.
    */
+  /* referenced via serverOptions.pOptDesc->pzText */
+  puts(_("Address to bind"));
+
   /* referenced via serverOptions.pOptDesc->pzText */
   puts(_("Port to bind"));
 
