@@ -4,6 +4,8 @@ source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger
 version := -std=c99
 
 cflags:= -Wall -pedantic
+ldflags := -lm
+test_ldflags := -lcunit
 
 source_dirs := $(addprefix ../,$(source_dirs))
 search_wildcards := $(addsuffix /*.c,$(source_dirs))
@@ -11,7 +13,7 @@ wildcard_source := $(wildcard $(filter-out ../tests/*.c,$(search_wildcards)))
 wildcard_test := $(filter-out .././main.c,$(wildcard $(search_wildcards)))
 
 $(full_program_name): $(notdir $(patsubst %.c,%.o,$(wildcard_source)))
-	gcc $(version) $^ -o $@
+	gcc $(version) $^ -o $@ $(ldflags)
 
 .PHONY: test-run
 test-run: test
@@ -19,7 +21,7 @@ test-run: test
 
 .PHONY: test
 test: $(notdir $(patsubst %.c,%.o,$(wildcard_test)))
-	gcc $(version) $^ -o $@
+	gcc $(version) $^ -o $@ $(ldflags) $(test_ldflags)
 
 VPATH := $(source_dirs) 
 

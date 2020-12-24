@@ -12,20 +12,20 @@ mail_files_t* check_directory(char* dir_path)
     struct Mail_files* result = malloc(sizeof(mail_files_t));
     if(result == NULL)
     {
-        printf("Error while allocating memory for mail files struct");
+        printf("Error while allocating memory for mail files struct\n");
         return NULL;
     }
 
 	int count = get_files_count(dir_path);
     if(count < 0)
     {
-        printf("Error in counting files in directory %s", dir_path);
+        printf("Error in counting files in directory %s\n", dir_path);
         free(result);
         return NULL;
     }
     else if(count == 0)
     {
-        printf("There is no files in working directory %s", dir_path);
+        printf("There is no files in working directory %s\n", dir_path);
         result->count = 0;
         result->files = files_names;
         return result;
@@ -34,7 +34,7 @@ mail_files_t* check_directory(char* dir_path)
     files_names = (char**)malloc(sizeof(char*) * count);
     if(files_names == NULL)
     {
-        printf("Error while allocating memory for files names");
+        printf("Error while allocating memory for files names\n");
         free(result);
         return NULL;
     }
@@ -44,7 +44,7 @@ mail_files_t* check_directory(char* dir_path)
         files_names[i] = (char*) malloc(sizeof(char) * PATH_MAX);
         if(files_names[i] == NULL)
         {
-            printf("Error while allocating memory for file name");
+            printf("Error while allocating memory for file name\n");
 
             for(int j = i-1; j >= 0; j--)
             {
@@ -58,7 +58,7 @@ mail_files_t* check_directory(char* dir_path)
     }
     if(get_files_names(dir_path, files_names, count) != 0)
     {
-        printf("Error in getting files names");
+        printf("Error in getting files names\n");
         for(int i = 0; i < count; i++)
         {
             free(files_names[i]);
@@ -82,22 +82,23 @@ int get_files_count(char* dir_path)
     dir = opendir(dir_path);
     if( dir == NULL ) 
     {
-        printf("Error in opening %s", dir_path);
+        printf("Error in opening %s\n", dir_path);
         return -1;
     }
-
-    while (entry = readdir(dir))
+    entry = readdir(dir);
+    while (entry != NULL)
     {
         if(entry->d_type == DT_REG)
         {
             count++;
         }
+        entry = readdir(dir);
     }
 
     res = closedir(dir);
     if(res != 0)
     {
-        printf("Error while closing directory %s", dir_path);
+        printf("Error while closing directory %s\n", dir_path);
         return -1;
     }
 
@@ -114,7 +115,7 @@ int get_files_names(char* dir_path, char** files_names, int files_count)
     dir = opendir(dir_path);
     if( dir == NULL ) 
     {
-        printf("Error in opening %s", dir_path);
+        printf("Error in opening %s\n", dir_path);
         return -1;
     }
 
@@ -133,7 +134,7 @@ int get_files_names(char* dir_path, char** files_names, int files_count)
     res = closedir (dir);
     if(res != 0)
     {
-        printf("Error while closing directory %s", dir_path);
+        printf("Error while closing directory %s\n", dir_path);
         return -1;
     }
 

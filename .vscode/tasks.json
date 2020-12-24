@@ -29,6 +29,16 @@
                 "isDefault": true
             },
             "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build-client-tests",
+            "type": "shell",
+            "command": "make client-test",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
         }
     ],
     "version": "2.0.0"

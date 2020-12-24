@@ -29,15 +29,15 @@ server_build_dir:
 client: client_build_dir 
 	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile 
 
-server-test: client_build_dir
+client-test: client_build_dir
 	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test
 
-server-test-run: client_build_dir
+client-test-run: client_build_dir
 	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test-run
 
-
-client_build_dir:
+client_build_dir: client_clean
 	mkdir -p $(client_dir)/$(build_dir)
+
 
 .PHONY: clean
 clean: server_clean client_clean
@@ -47,4 +47,4 @@ server_clean:
 
 # Коля сюда добавь свое
 client_clean:
-	cd $(server_dir) && make clean
+	cd $(client_dir) && make clean
