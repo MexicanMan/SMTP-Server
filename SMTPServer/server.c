@@ -102,6 +102,7 @@ int server_main(server_t* server) {
                 continue;
             
             if (server_lost_client_timeout(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_main server_lost_client_timeout");
                 is_running = 0;
                 break;
             }
