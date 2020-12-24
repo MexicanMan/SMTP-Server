@@ -42,7 +42,7 @@ int main_loop()
 	while(run)
 	{
 		//Проверка директории, чтение, отправка, сон, завершение
-		mail_files* mails = check_directory(MAILDIR);
+		mail_files_t* mails = check_directory(MAILDIR);
 		if(mails == NULL)
 		{
 			printf("Error while checking mails directory");

@@ -6,10 +6,10 @@
 
 #include "dir_worker.h"
 
-mail_files* check_directory(char* dir_path)
+mail_files_t* check_directory(char* dir_path)
 {
     char** files_names = NULL;
-    struct Mail_files* result = malloc(sizeof(mail_files));
+    struct Mail_files* result = malloc(sizeof(mail_files_t));
     if(result == NULL)
     {
         printf("Error while allocating memory for mail files struct");
@@ -20,6 +20,7 @@ mail_files* check_directory(char* dir_path)
     if(count < 0)
     {
         printf("Error in counting files in directory %s", dir_path);
+        free(result);
         return NULL;
     }
     else if(count == 0)
@@ -34,7 +35,8 @@ mail_files* check_directory(char* dir_path)
     if(files_names == NULL)
     {
         printf("Error while allocating memory for files names");
-        return -1;
+        free(result);
+        return NULL;
     }
 
     for(int i = 0; i < count; i++)
@@ -43,13 +45,27 @@ mail_files* check_directory(char* dir_path)
         if(files_names[i] == NULL)
         {
             printf("Error while allocating memory for file name");
-            return -1;
+
+            for(int j = i-1; j >= 0; j--)
+            {
+                free(files_names[j]);
+            }
+            free(files_names);
+            free(result);
+
+            return NULL;
         }
     }
     if(get_files_names(dir_path, files_names, count) != 0)
     {
         printf("Error in getting files names");
-        return -1;
+        for(int i = 0; i < count; i++)
+        {
+            free(files_names[i]);
+        }
+        free(files_names);
+        free(result);
+        return NULL;
     }
     result->count = count;
     result->files = files_names;
@@ -124,7 +140,7 @@ int get_files_names(char* dir_path, char** files_names, int files_count)
     return 0;
 }
 
-int clear_mail_files(mail_files* files)
+int clear_mail_files(mail_files_t* files)
 {
     int count = files->count;
     char** files_names = files->files;

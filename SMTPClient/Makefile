@@ -11,7 +11,7 @@ wildcard_source := $(wildcard $(filter-out ../tests/*.c,$(search_wildcards)))
 wildcard_test := $(filter-out .././main.c,$(wildcard $(search_wildcards)))
 
 $(full_program_name): $(notdir $(patsubst %.c,%.o,$(wildcard_source)))
-	gcc $(version) $^ -o $@ $(ldflags)
+	gcc $(version) $^ -o $@
 
 .PHONY: test-run
 test-run: test
