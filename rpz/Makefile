@@ -63,4 +63,5 @@ doxygen: doxygen.cfg
 .PHONY: clean
 clean:
 	rm -rf $(TEXINC_DIR)/* $(DOT_DIR)/* $(DOX_DIR)/*; \
-	find $(TEX_DIR)/ -type f ! -name "*.tex" -exec rm -f {} \;
+	rm $(TEX_DIR)/$(REPORT_NAME).pdf
+	find $(TEX_DIR)/ -type f ! -name "*.tex" -and ! -name "*.pdf" -exec rm -f {} \; \

@@ -3,7 +3,7 @@
 import re, sys, os, os.path
 
 
-to_replace = (('\\n','\\textbackslash{}n'), ('\\\\', '\\textbackslash{}'), ('$', '\$'), ('^', '\^{}'))
+to_replace = (('\\n','\\textbackslash{}n'), ('\\\\', '\\textbackslash{}'), ('$', '\$'), ('^', '\^{}'), ('\" ', '\"\\ '), ('_', '\\_'), ('\"<', '\"\\ <'))
 
 to_delete = ('(', ')')
 

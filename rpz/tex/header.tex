@@ -23,8 +23,6 @@
 
 \sloppy
 
-
-
 % Оглавление в PDF
 \usepackage[
 bookmarks=true,
@@ -60,6 +58,7 @@ unicode=true
 % Русский в комментариях.
 % \lstset{escapebegin=\begin{cyr},escapeend=\end{cyr}}
 
+% От доксиджена
 \usepackage{ifthen}
 \ifx\requestedLaTeXdate\undefined
 \usepackage{array}
@@ -90,15 +89,7 @@ unicode=true
 \usepackage{courier}
 \usepackage{amssymb}
 \usepackage{sectsty}
-\renewcommand{\familydefault}{\sfdefault}
-\allsectionsfont{%
-  \fontseries{bc}\selectfont%
-  \color{darkgray}%
-}
-\renewcommand{\DoxyLabelFont}{%
-  \fontseries{bc}\selectfont%
-  \color{darkgray}%
-}
+
 \newcommand{\+}{\discretionary{\mbox{\scriptsize$\hookleftarrow$}}{}{}}
 
 % Arguments of doxygenemoji:
@@ -125,18 +116,7 @@ unicode=true
 \newcommand{\doxynormalparskip}{\setlength{\parskip}{3ex plus 2ex minus 2ex}}
 \newcommand{\doxytocparskip}{\setlength{\parskip}{1ex plus 0ex minus 0ex}}
 \doxynormalparskip
-\makeatletter
-\renewcommand{\paragraph}{%
-  \@startsection{paragraph}{4}{0ex}{-1.0ex}{1.0ex}{%
-    \normalfont\normalsize\bfseries\SS@parafont%
-  }%
-}
-\renewcommand{\subparagraph}{%
-  \@startsection{subparagraph}{5}{0ex}{-1.0ex}{1.0ex}{%
-    \normalfont\normalsize\bfseries\SS@subparafont%
-  }%
-}
-\makeatother
+
 
 \makeatletter
 \newcommand\hrulefilll{\leavevmode\leaders\hrule\hskip 0pt plus 1filll\kern\z@}
@@ -163,8 +143,9 @@ unicode=true
 }
 
 \usepackage{caption}
-\captionsetup{labelsep=space,justification=centering,font={bf},singlelinecheck=off,skip=4pt,position=top}
+\captionsetup{labelsep=space,justification=centering,singlelinecheck=off,skip=4pt,position=top}
 
 \usepackage{etoc}
 \etocsettocstyle{\doxytocparskip}{\doxynormalparskip}
 \renewcommand{\numberline}[1]{#1~}
+
