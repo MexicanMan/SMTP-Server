@@ -1,7 +1,8 @@
 #ifndef DIR_WORKER_H
 #define DIR_WORKER_H
 
-typedef struct Mail_files{
+typedef struct Mail_files
+{
     char** files;
     int count;
 } mail_files_t;
