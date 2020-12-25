@@ -1,5 +1,5 @@
 # SMTP Server
-A SMTP server implementation made for a networking course.
+MTA SMTP server implementation made for a networking course.
 
 ## Build
 To build we use make, so you can simply put:
@@ -9,3 +9,7 @@ To build we use make, so you can simply put:
 
 ## Features
 ToDo
+
+## Authors
+@Mexican_Man - Server part
+@kolmosckvich - Client part

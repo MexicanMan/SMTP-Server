@@ -21,7 +21,7 @@ server-test-run: server_build_dir
 server_build_dir:
 	mkdir -p $(server_dir)/$(build_dir)
 
-# Коля сюда добавь свое
+
 .PHONY: client
 client: client_build_dir 
 	cd $(client_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile 
@@ -34,6 +34,7 @@ client-test-run: client_build_dir
 
 client_build_dir: client_clean
 	mkdir -p $(client_dir)/$(build_dir)
+	mkdir -p $(client_dir)/$(build_dir)/log
 
 
 .PHONY: clean
