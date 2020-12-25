@@ -129,15 +129,15 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     char** hosts[MAX_TO_COUNT];
     char** addrs;
     memset(to_raws, NULL, MAX_TO_COUNT);
-    memset(tos, NULL, MAX_TO_COUNT);
     memset(hosts, NULL, MAX_TO_COUNT);
     int to_count;
 
-    int i = 1;
-    while(strcmp(mail_file_text[i], "\n") != 0)
+    int sn = 1;
+    while(strcmp(mail_file_text[sn], "\n") != 0)
     {
-        to_raws[i-1] = mail_file_text[i];
+        to_raws[sn-1] = mail_file_text[sn];
         to_count++;
+        sn++;
     }
 
     mail_t* mail = malloc(sizeof(mail_t));
@@ -154,6 +154,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         free(mail);
         return NULL;
     }
+    memset(tos, NULL, MAX_TO_COUNT);
 
     char* from = cut_addresses_from_mail_format(from_raw);
     if(from == NULL)
@@ -224,7 +225,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     }
 
     char** text = malloc(sizeof(char*) * str_num - to_count - 1);
-    if(text = NULL)
+    if(text == NULL)
     {
         printf("Error while allocating memory for mail struct text\n");
         for(int i = 0; i < to_count; i++)
@@ -454,7 +455,7 @@ char* cut_addresses_from_mail_format(char* addr_str_raw)
 char* cut_host_from_reciever(char* reciever)
 {
     char* start = strchr(reciever, '@');
-    char* end = strrchr(reciever, '>');
+    char* end = strrchr(reciever, '\0');
     int len = end-start;
     char* from = malloc(sizeof(char) * len);
     if(from == NULL)

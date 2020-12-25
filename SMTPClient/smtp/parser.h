@@ -21,5 +21,6 @@ char* get_address_from_reciever(char* reciever_host, int is_home_mode);
 char* cut_addresses_from_mail_format(char* addr_str_raw);
 char* cut_host_from_reciever(char* reciever);
 char* get_record(char* host, int type);
+void clear_mail(mail_t* mail);
 
 #endif
