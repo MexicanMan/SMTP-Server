@@ -1,7 +1,7 @@
 #include <CUnit/Basic.h>
 
 #include "test_dirwork.h"
-#include "test_parcer.h"
+#include "test_parser.h"
 
 int main() {
     int ret;
@@ -25,13 +25,13 @@ int main() {
         return ret;
     }
 
-    CU_pSuite parce = CU_add_suite("File parce tests", init_parcer_tests, cleanup_parcer_tests);
-    if (!parce) 
+    CU_pSuite parse = CU_add_suite("File parse tests", init_parser_tests, cleanup_parser_tests);
+    if (!parse) 
     {
         CU_cleanup_registry();
         return CU_get_error();
     }
-    if ((ret = test_parcer(parce)) != CUE_SUCCESS) 
+    if ((ret = test_parser(parse)) != CUE_SUCCESS) 
     {
         CU_cleanup_registry();
         return ret;
