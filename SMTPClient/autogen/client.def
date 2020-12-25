@@ -1,0 +1,14 @@
+Autogen Definitions fsm;
+
+method = case;
+type   = reent;
+prefix = client_fsm;
+
+state  = initialized, s_helo, s_mf, s_rt, s_data, s_mail, s_rst, s_quit, timeout, error;
+event  = connected, ehlo, mf, rt, data, rset, quit, connection_timeout, connection_lost;
+
+transition =
+{ tst = init; tev = connected; next = initialized; ttype = connect; };
+
+transition =
+{ tst = initialized;          tev = ehlo;             next = s_helo;           ttype = ehlo; };

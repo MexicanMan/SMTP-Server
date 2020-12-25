@@ -17,6 +17,7 @@
 #define BUFSIZE 4
 
 #define MAILDIR "./SMTPClient/test_mails"
+#define PROC_COUNT 5
 
 #define END_S "\n.\n"
 
@@ -45,12 +46,12 @@ int main_loop()
 		mail_files_t* mails = check_directory(MAILDIR);
 		if(mails == NULL)
 		{
-			printf("Error while checking mails directory");
+			printf("Error while checking mails directory\n");
 			run = 0;
 		}
 		else if(mails->count == 0)
 		{
-			printf("Nothing to send");
+			printf("Nothing to send\n");
 			sleep(1);
 		}
 		else
@@ -60,6 +61,14 @@ int main_loop()
 			{
 				printf("\tpath - %s\n", mails->files[i]);
 			}
+			//do smth
+			if(batch_files_for_processes(mails, PROC_COUNT) != 0)
+			{
+				printf("Error while processing mails\n");
+				run = 0;
+				clear_mail_files(mails);
+			}
+
 			sleep(1);
 		}
 		clear_mail_files(mails);
@@ -71,6 +80,43 @@ static void close_handler(int sig)
 {
     run = 0;
 	return;
+}
+
+int batch_files_for_processes(mail_files_t* mails, int processes_count)
+{
+	int start = 0;
+	int end = 0;
+	int mails_count = mails->count;
+	int pack = mails_count/processes_count;
+	if(mails_count % processes_count)
+		pack++;
+
+	while(end < mails_count)
+	{
+		start = end;
+		if(end + pack >= mails_count)
+		{
+			end = mails_count - 1;
+		}
+		else
+		{
+			end += pack;
+		}
+		//fork with save of pid and other sht
+		//Мб и сначала врубить селект, а всю дичь делать уже потом
+		//do smth
+		if(process_mails(mails, start, end) != 0)
+		{
+			printf("Error while processing mail pack from %d to %d\n", start, end);
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int process_mails(mail_files_t* mails, int start_ind, int end_ind)
+{
+	// по идее врубить селект, создать соединения, обработать их и закрыть
 }
  
 int main_old(int argc, char **argv) 
