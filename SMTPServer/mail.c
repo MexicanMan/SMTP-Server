@@ -8,6 +8,7 @@
 #include "mail.h"
 
 #include "../SMTPShared/dir_helper.h"
+#include "../SMTPShared/dir_helper.h"
 
 #define FROM_HEADER "X-FROM:"
 #define TO_HEADER "X-TO:"
@@ -46,25 +47,35 @@ void reset_mail(mail_t* mail) {
     mail->data = NULL;
 }
 
-char* get_mail_filename(const char* path, int len) {
+char* get_mail_filename() {
     struct timeval t;
     gettimeofday(&t, NULL);
 
     // Change Unix time to miliseconds
     unsigned long int curr_time = (unsigned) t.tv_sec * 1000 + t.tv_usec / 1000;
     int time_len = floor(log10(curr_time)) + 1;
-    int filename_len = time_len + len + sizeof(MAIL_EXT) + 1;
+    int filename_len = time_len + sizeof(MAIL_EXT);
 
     char* filename = (char*) calloc(filename_len, sizeof(char));
     if (!filename)
         return NULL;
     
-    snprintf(filename, filename_len, "%s/%lu%s", path, curr_time, MAIL_EXT);
+    snprintf(filename, filename_len, "%lu%s", curr_time, MAIL_EXT);
     return filename;
 }
 
+char* get_mail_full_filename(const char* path, int path_len, const char* filename, int name_len) {
+    int fullname_len = path_len + name_len + 2;  // Extra one for '/' and another for '\0'
+    char* full_name = (char*) calloc(fullname_len, sizeof(char));
+    if (!full_name)
+        return NULL;
+
+    snprintf(full_name, fullname_len, "%s/%s", path, filename);
+    return full_name;
+}
+
 int save_mail(const char* path, int len, mail_t mail) {
-    char* filename = get_mail_filename(path, len);
+    char* filename = get_mail_filename();
     if (!filename)
         return -1;
 
@@ -79,6 +90,14 @@ int save_mail(const char* path, int len, mail_t mail) {
         fprintf(f, "\n%s", mail.data);
 
         fclose(f);
+
+        char* full_name = get_mail_full_filename(path, len, filename, strlen(filename));
+        if (full_name) {
+            rename(filename, full_name);
+            free(full_name);
+        } else {
+            res = -1;
+        }
     } else {
         res = -1;
     }
