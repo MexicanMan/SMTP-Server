@@ -12,16 +12,19 @@
 #include <signal.h>
  
 #include "../SMTPShared/shared_strings.h"
+#include "../SMTPShared/logger/logger.h"
 #include "./dirwork/dir_worker.h"
 
-#define BUFSIZE 4
+#define BUFSIZE 400
 
+#define BASE_LOG_DIR "./SMTPClient/build/log"
 #define MAILDIR "./SMTPClient/test_mails"
 #define PROC_COUNT 5
 
 #define END_S "\n.\n"
 
 static volatile int run = 1;
+static volatile logger_t* logger;
 
 int main_old(int argc, char **argv);
 static void close_handler(int signal);
@@ -33,8 +36,17 @@ int main(int argc, char **argv)
 	signal(SIGINT, close_handler);
     signal(SIGTERM, close_handler);
 
+	logger = logger_init(BASE_LOG_DIR, CONSOLE_PRINT | FILE_PRINT);
+    if (!logger) 
+	{
+        printf("Can't init logger\n");
+		return -1;
+    }
+
+
 	ret = main_loop();
 
+	logger_free(logger);
 	return ret;
 }
 
@@ -46,17 +58,20 @@ int main_loop()
 		mail_files_t* mails = check_directory(MAILDIR);
 		if(mails == NULL)
 		{
-			printf("Error while checking mails directory\n");
+			logger_log(logger, ERROR_LOG, "Error while checking mails directory\n");
+			//printf("Error while checking mails directory\n");
 			run = 0;
 		}
 		else if(mails->count == 0)
 		{
-			printf("Nothing to send\n");
+			logger_log(logger, INFO_LOG, "Nothing to send\n");
+			//printf("Nothing to send\n");
 			sleep(1);
 		}
 		else
 		{
-			printf("Some mails in directory:\n");
+			logger_log(logger, INFO_LOG, "Some mails in directory:\n");
+			//printf("Some mails in directory:\n");
 			for(int i = 0; i < mails->count; i++)
 			{
 				printf("\tpath - %s\n", mails->files[i]);
@@ -64,7 +79,8 @@ int main_loop()
 			//do smth
 			if(batch_files_for_processes(mails, PROC_COUNT) != 0)
 			{
-				printf("Error while processing mails\n");
+				logger_log(logger, ERROR_LOG, "Error while processing mails\n");
+				//printf("Error while processing mails\n");
 				run = 0;
 				clear_mail_files(mails);
 			}
@@ -91,7 +107,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count)
 	if(mails_count % processes_count)
 		pack++;
 
-	while(end < mails_count)
+	while(end < mails_count - 1)
 	{
 		start = end;
 		if(end + pack >= mails_count)
@@ -105,18 +121,25 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count)
 		//fork with save of pid and other sht
 		//Мб и сначала врубить селект, а всю дичь делать уже потом
 		//do smth
-		if(process_mails(mails, start, end) != 0)
+		if(process_mail_files(mails, start, end) != 0)
 		{
-			printf("Error while processing mail pack from %d to %d\n", start, end);
+			logger_log(logger, ERROR_LOG, "Error while processing mail pack\n");
+			//printf("Error while processing mail pack from %d to %d\n", start, end);
 			return -1;
 		}
 	}
 	return 0;
 }
 
-int process_mails(mail_files_t* mails, int start_ind, int end_ind)
+int process_mail_files(mail_files_t* mails, int start_ind, int end_ind)
 {
-	// по идее врубить селект, создать соединения, обработать их и закрыть
+	//Сначала - считать файлы, удалить их из директории и, затем передать их обработчику
+	//затем по идее врубить селект, создать соединения, обработать их и закрыть
+}
+
+int process_mails(char* mail_text/*заменить на структурированные письма*/)
+{
+
 }
  
 int main_old(int argc, char **argv) 
