@@ -122,12 +122,15 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         printf("Incorrect mail format\n");
         return NULL;
     }
+
     char* from_raw = mail_file_text[0];
     char** to_raws[MAX_TO_COUNT];
-    char** tos[MAX_TO_COUNT];
+    char** tos;
     char** hosts[MAX_TO_COUNT];
+    char** addrs;
     memset(to_raws, NULL, MAX_TO_COUNT);
     memset(tos, NULL, MAX_TO_COUNT);
+    memset(hosts, NULL, MAX_TO_COUNT);
     int to_count;
 
     int i = 1;
@@ -136,12 +139,28 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         to_raws[i-1] = mail_file_text[i];
         to_count++;
     }
-    
+
+    mail_t* mail = malloc(sizeof(mail_t));
+    if(mail == NULL)
+    {
+        printf("Error while allocating mail struct\n");
+        return NULL;
+    }
+
+    tos = malloc(sizeof(char*) * MAX_TO_COUNT);
+    if(tos == NULL)
+    {
+        printf("Error while allocating recievers array\n");
+        free(mail);
+        return NULL;
+    }
 
     char* from = cut_addresses_from_mail_format(from_raw);
     if(from == NULL)
     {
         printf("Error while processing mail struct addresses\n");
+        free(mail);
+        free(tos);
         return NULL;
     }
 
@@ -166,6 +185,8 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
                 }
             }
             free(from);
+            free(mail);
+            free(tos);
             return NULL;
         }
         tos[i] = to;
@@ -180,27 +201,129 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
                 free(hosts[j]);
             }
             free(from);
+            free(mail);
+            free(tos);
             return NULL;
         }
         hosts[i] = host;
     }
-    
+
+    addrs = get_recievers_from_hosts(hosts, is_home_mode);
+    if(addrs == NULL)
+    {
+        printf("Error while getting recievers addresses\n");
+        for(int i = 0; i < to_count; i++)
+        {
+            free(tos[i]);
+            free(hosts[i]);
+        }
+        free(from);
+        free(mail);
+        free(tos);
+        return NULL;
+    }
+
     char** text = malloc(sizeof(char*) * str_num - to_count - 1);
     if(text = NULL)
     {
         printf("Error while allocating memory for mail struct text\n");
+        for(int i = 0; i < to_count; i++)
+        {
+            free(tos[i]);
+            free(hosts[i]);
+            free(addrs[i]);
+        }
+        free(from);
+        free(addrs);
+        free(mail);
+        free(tos);
         return NULL;
     }
 
-    //Спарсить конкретные адреса серверов получателей
-    //Заполнить структуру
-    //Написать ф-цию освобождения структуры
-
+    for(int i = 0; i < str_num - to_count - 2; i++)
+    {
+        text[i] = malloc(sizeof(char) * MAX_STR_LENGTH);
+        if(text[i] == 0)
+        {
+            printf("Error while allocating memory for mail struct text\n");
+            for(int j = 0; j < i; j++)
+            {
+                free(text[j]);
+            }
+            for(int j = 0; j < to_count; j++)
+            {
+                free(tos[j]);
+                free(hosts[j]);
+                free(addrs[j]);
+            }
+            free(from);
+            free(addrs);
+            free(text);
+            free(mail);
+            free(tos);
+            return NULL;
+        }
+        strcpy(text[i], mail_file_text[i + to_count + 2]);
+    }
+    mail->from = from;
+    mail->recievers = tos;
+    mail->hosts = addrs;
+    mail->mail_text = text;
+    mail->tos_count = to_count;
+    mail->text_len = str_num - to_count - 2;
+    return mail;
 }
 
-char** get_recievers_from_hosts(char** hosts)
+void clear_mail(mail_t* mail)
 {
-    
+    if(mail == NULL)
+    {
+        return;
+    }
+
+    for(int i = 0; i < mail->tos_count; i++)
+    {   
+        free(mail->recievers[i]);
+        free(mail->hosts[i]);
+    }
+    free(mail->hosts);
+    free(mail->recievers);
+    for(int i = 0; i < mail->text_len; i++)
+    {
+        free(mail->mail_text[i]);
+    }
+    free(mail->mail_text);
+    free(mail);
+    return;
+}
+
+char** get_recievers_from_hosts(char** hosts, int is_home_mode)
+{
+    int i = 0;
+    char** addrs = malloc(sizeof(char*) * MAX_TO_COUNT);
+    if(addrs == NULL)
+    {
+        printf("Error while allocating memory for mail struct text\n");
+        return NULL;
+    }
+    memset(addrs, NULL, MAX_TO_COUNT);
+
+    while(hosts[i] != NULL && i < MAX_TO_COUNT)
+    {
+        addrs[i] = get_address_from_reciever(hosts[i], is_home_mode);
+        if(addrs[i] == NULL)
+        {
+            printf("Error while recieving recievers addresses\n");
+            for(int j = 0; j < i; j++)
+            {
+                free(addrs[j]);
+            }
+            free(addrs);
+            return NULL;
+        }
+        i++;
+    }
+    return addrs;
 }
 
 char* get_address_from_reciever(char* reciever_host, int is_home_mode)
