@@ -1,7 +1,7 @@
 SOURCE_DIR := ../SMTPServer
 AUTOGEN_DIR := $(SOURCE_DIR)/autogen
 REGEXP_FILE := $(SOURCE_DIR)/commands_parser.h
-MAKEFILE := $(SOURCE_DIR)/Makefile
+SYSTEST_FILE := $(SOURCE_DIR)/tests/sys_test.py
 
 REPORT_NAME := report_server
 
@@ -23,7 +23,7 @@ SIMPLE_CFLOW := grep -v -f cflow.ignore
 # Файлы latex
 TEXS := $(wildcard $(TEX_DIR)/*.tex)
 
-$(REPORT_NAME): $(TEXS) doxygen regexp.tex $(addprefix $(TEXINC_DIR)/, server_def_dot.pdf cflow_main_dot.pdf cflow_handlers_dot.pdf server-opts.def.tex)
+$(REPORT_NAME): $(TEXS) doxygen regexp.tex $(addprefix $(TEXINC_DIR)/, server_def_dot.pdf cflow_main_dot.pdf cflow_handlers_dot.pdf server-opts.def.tex sys_test_py.tex)
 	cd $(TEX_DIR) && pdflatex $(REPORT_NAME).tex && pdflatex $(REPORT_NAME).tex && cp $(REPORT_NAME).pdf ..
 
 # .def -> _def.dot
@@ -53,6 +53,10 @@ regexp.tex: $(REGEXP_FILE)
 # server-opts.def -> .tex
 $(TEXINC_DIR)/server-opts.def.tex: $(AUTOGEN_DIR)/server-opts.def
 	$(SRC2TEX) $< 8 | grep -v descrip > $@
+
+# sys_test.py -> *.tex
+$(TEXINC_DIR)/sys_test_py.tex: $(SYSTEST_FILE)
+	$(SRC2TEX) $< 3 > $@
 
 .PHONY: doxygen
 doxygen: doxygen.cfg 
