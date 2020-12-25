@@ -3,8 +3,8 @@ full_program_name := $(addprefix $(exe_directory),$(program_name))
 source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger tests dirwork smtp
 version := -std=c99
 
-cflags:= -Wall -pedantic
-ldflags := -lm
+cflags:= -Wall -pedantic 
+ldflags := -lm -lresolv
 test_ldflags := -lcunit
 
 source_dirs := $(addprefix ../,$(source_dirs))

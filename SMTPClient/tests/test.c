@@ -40,7 +40,7 @@ int main() {
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
 
-    CU_cleanup_registry();
+    //CU_cleanup_registry();
 
     printf("Client tests passed\n");
     return CU_get_error();
