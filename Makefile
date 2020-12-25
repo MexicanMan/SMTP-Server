@@ -13,10 +13,7 @@ all: server client
 
 .PHONY: server
 server: server_build_dir 
-	cd $(server_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile 
-
-server-test: server_build_dir
-	cd $(server_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test
+	cd $(server_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile
 
 server-test-run: server_build_dir
 	cd $(server_dir) && make $(exe_directory) $(compile_flags) --directory=$(build_dir) --makefile=../Makefile test-run

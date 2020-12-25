@@ -25,9 +25,9 @@ void get_log_msg_type(char* type_buf, int len, log_msg_type_t type);
 
 /**
  * @brief  Logger initialization   
- * @param  log_dir: Directory for log files
- * @param  logger_options: Options for logger
- * @retval Logger for sending messages or NULL in case of error
+ * @param  log_dir Directory for log files
+ * @param  logger_options Options for logger
+ * @return Logger for sending messages or NULL in case of error
  */
 logger_t* logger_init(const char* log_dir, unsigned const char logger_options) {
     pid_t pid;
@@ -64,10 +64,10 @@ logger_t* logger_init(const char* log_dir, unsigned const char logger_options) {
 
 /**
  * @brief  Log a message
- * @param  logger_sender: Sender logger
- * @param  type: Message type
- * @param  message: Message
- * @retval Number of logged symbols or error
+ * @param  logger_sender Sender logger
+ * @param  type Message type
+ * @param  message Message
+ * @return Number of logged symbols or error
  */
 int logger_log(logger_t* logger_sender, log_msg_type_t type, const char* message) {
     log_msg_t log_msg;
@@ -95,8 +95,8 @@ void logger_free(logger_t* logger_sender) {
 
 /**
  * @brief  Listener logger process manager
- * @param  pid: pid of logger process
- * @param  logger_options: Options for logger
+ * @param  pid pid of logger process
+ * @param  logger_options Options for logger
  */
 void logger_listener_proc(const char* log_dir, int mq_id, unsigned const char logger_options) {
     logger_t logger_listener;
@@ -119,9 +119,9 @@ void logger_listener_proc(const char* log_dir, int mq_id, unsigned const char lo
 
 /**
  * @brief  
- * @param  prog_name: 
- * @param  logger_options: 
- * @retval Logger for sending messages or NULL in case of error
+ * @param  prog_name
+ * @param  logger_options
+ * @return Logger for sending messages or NULL in case of error
  */
 logger_t* logger_sender_proc(int mq_id, unsigned const char logger_options) {
     logger_t* logger_sender = (logger_t*) malloc(sizeof(logger_t));
@@ -167,9 +167,9 @@ int logger_init_mq()
 
 /**
  * @brief  Get log message type string from enum
- * @param  type_buf: Buffer where type string will be put 
- * @param  len: Buffer len, should be equal to MIN_TYPE_STR_SIZE
- * @param  type: log messge type
+ * @param  type_buf Buffer where type string will be put 
+ * @param  len Buffer len, should be equal to MIN_TYPE_STR_SIZE
+ * @param  type log messge type
  */
 void get_log_msg_type(char* type_buf, int len, log_msg_type_t type) {
     if (len < MIN_TYPE_STR_SIZE) {  // assert?
@@ -197,8 +197,8 @@ void get_log_msg_type(char* type_buf, int len, log_msg_type_t type) {
 
 /**
  * @brief  Get current time for log
- * @param  date_buf: Buffer where time will be put 
- * @param  len: Buffer len, should be equal to TIME_STR_SIZE
+ * @param  date_buf Buffer where time will be put 
+ * @param  len Buffer len, should be equal to TIME_STR_SIZE
  */
 void get_log_time(char* time_buf, int len)
 {
@@ -215,8 +215,8 @@ void get_log_time(char* time_buf, int len)
 
 /**
  * @brief  Get current date for log
- * @param  date_buf: Buffer where date will be put 
- * @param  len: Buffer len, should be equal to DATE_STR_SIZE
+ * @param  date_buf Buffer where date will be put 
+ * @param  len Buffer len, should be equal to DATE_STR_SIZE
  */
 void get_log_date(char* date_buf, int len)
 {
@@ -233,8 +233,8 @@ void get_log_date(char* date_buf, int len)
 
 /**
  * @brief  Log file creation and/or opening
- * @param  logger: Logger
- * @param  log_dir: Directory with log files
+ * @param  logger Logger
+ * @param  log_dir Directory with log files
  */
 int logger_open_file(logger_t* logger, const char* log_dir)
 {
