@@ -1,6 +1,7 @@
 #include <CUnit/Basic.h>
 
 #include "test_dirwork.h"
+#include "test_parcer.h"
 
 int main() {
     int ret;
@@ -19,6 +20,18 @@ int main() {
         return CU_get_error();
     }
     if ((ret = test_dirwork(dirwork)) != CUE_SUCCESS) 
+    {
+        CU_cleanup_registry();
+        return ret;
+    }
+
+    CU_pSuite parce = CU_add_suite("File parce tests", init_parcer_tests, cleanup_parcer_tests);
+    if (!parce) 
+    {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+    if ((ret = test_parcer(parce)) != CUE_SUCCESS) 
     {
         CU_cleanup_registry();
         return ret;
