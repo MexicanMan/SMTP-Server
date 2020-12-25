@@ -9,19 +9,73 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
  
 #include "../SMTPShared/shared_strings.h"
+#include "./dirwork/dir_worker.h"
 
 #define BUFSIZE 4
 
+#define MAILDIR "./SMTPClient/test_mails"
+
 #define END_S "\n.\n"
 
-int full_read(char** input);
- 
+static volatile int run = 1;
+
+int main_old(int argc, char **argv);
+static void close_handler(int signal);
+int main_loop();
+
 int main(int argc, char **argv) 
 {
+	int ret;
+	signal(SIGINT, close_handler);
+    signal(SIGTERM, close_handler);
+
+	ret = main_loop();
+
+	return ret;
+}
+
+int main_loop()
+{
+	while(run)
+	{
+		//Проверка директории, чтение, отправка, сон, завершение
+		mail_files_t* mails = check_directory(MAILDIR);
+		if(mails == NULL)
+		{
+			printf("Error while checking mails directory");
+			run = 0;
+		}
+		else if(mails->count == 0)
+		{
+			printf("Nothing to send");
+			sleep(1);
+		}
+		else
+		{
+			printf("Some mails in directory:\n");
+			for(int i = 0; i < mails->count; i++)
+			{
+				printf("\tpath - %s\n", mails->files[i]);
+			}
+			sleep(1);
+		}
+		clear_mail_files(mails);
+	}
+	return 0;
+}
+
+static void close_handler(int sig) 
+{
+    run = 0;
+	return;
+}
+ 
+int main_old(int argc, char **argv) 
+{
     struct sockaddr_in addr;    /* для адреса сервера */
-    socklen_t addrlen;          /* размер структуры с адресом */
     int sk;                     /* файловый дескриптор сокета */
     char buf[BUFSIZE];          /* буфер для сообщений */
 	char recv_buf[BUFSIZE];

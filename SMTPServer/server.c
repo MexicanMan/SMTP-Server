@@ -13,7 +13,7 @@
 #include "../SMTPShared/shared_strings.h"
 
 #define POLL_WAIT 1000
-#define READBUF_SIZE 20
+#define READBUF_SIZE 128
 #define CLIENT_TIMEOUT 300
 
 int server_create_and_biding(const char* address, int port);
@@ -102,6 +102,7 @@ int server_main(server_t* server) {
                 continue;
             
             if (server_lost_client_timeout(server, i) < 0) {
+                logger_log(server->logger, ERROR_LOG, "server_main server_lost_client_timeout");
                 is_running = 0;
                 break;
             }
@@ -276,7 +277,7 @@ int server_add_client(server_t* server) {
 int server_input_command_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int parse_res = commands_parse(msg, msg_len, server, client_ind);
     if (parse_res == 0) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, sizeof(BAD_CMD_RESP), 0) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_CMD_RESP, strlen(BAD_CMD_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_command_handle prepare_send_buf");
             return -1;
         }
@@ -316,7 +317,7 @@ int server_check_input_command(server_t* server, int client_ind, server_client_t
 int server_input_mail_handle(char* msg, int msg_len, server_t* server, int client_ind, server_client_t* client) {
     int new_state = server_fsm_step(client->client_state, SERVER_FSM_EV_MAIL_END, client_ind, server, msg, msg_len);
     if (new_state == SERVER_FSM_ST_INVALID) {
-        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, sizeof(BAD_SEQ_RESP), 0) < 0) {
+        if (prepare_send_buf(server->fds + client_ind, client, BAD_SEQ_RESP, strlen(BAD_SEQ_RESP), 0) < 0) {
             logger_log(server->logger, ERROR_LOG, "server_input_mail_handle prepare_send_buf");
             return -1;
         }
@@ -416,7 +417,7 @@ int server_serve_client(server_t* server, int client_ind) {
         server_fsm_step(client->client_state, SERVER_FSM_EV_CONNECTION_LOST, client_ind, server, NULL, 0);
     }
 
-    return len;
+    return 0;
 }
 
 /**

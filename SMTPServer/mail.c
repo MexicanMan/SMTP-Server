@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "mail.h"
 
@@ -46,7 +47,11 @@ void reset_mail(mail_t* mail) {
 }
 
 char* get_mail_filename(const char* path, int len) {
-    unsigned long int curr_time = (unsigned) time(NULL);
+    struct timeval t;
+    gettimeofday(&t, NULL);
+
+    // Change Unix time to miliseconds
+    unsigned long int curr_time = (unsigned) t.tv_sec * 1000 + t.tv_usec / 1000;
     int time_len = floor(log10(curr_time)) + 1;
     int filename_len = time_len + len + sizeof(MAIL_EXT) + 1;
 
