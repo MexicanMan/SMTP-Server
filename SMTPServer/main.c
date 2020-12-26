@@ -79,7 +79,7 @@ int validate_options(options_t options) {
     return 0;
 }
 
-int drop_pivilege(const char* user, const char* group) {
+int drop_privilege(const char* user, const char* group) {
     if (getuid() == 0 && user != NULL && group != NULL) {
         // Process is running as root, drop privileges
         struct passwd *p = getpwnam(user);
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     server_t* server = server_init(logger, options.address, options.port, SERVER_DOMAIN, 
         options.maildir, options.client_mail_dir, pipe_fd[0]);
     if (server) {
-        if(!drop_pivilege(options.user, options.group)) 
+        if(!drop_privilege(options.user, options.group)) 
             server_main(server);
         
         server_finalize(server);
