@@ -13,6 +13,8 @@
 
 #define HOME_HOST "arasaka.com"
 #define HOME_IP "127.0.0.1"
+#define HOME_PORT 2525
+#define SMTP_PORT 25
 #define MAX_HOST_ADR_LEN 256
 
 char** read_file(char* filename, int* str_num)
@@ -209,7 +211,22 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         hosts[i] = host;
     }
 
-    addrs = get_recievers_from_hosts(hosts, is_home_mode);
+    int* ports = malloc(sizeof(int) * MAX_TO_COUNT);
+    if(ports == NULL)
+    {
+        printf("Error while allocating ports memory\n");
+        for(int i = 0; i < to_count; i++)
+        {
+            free(tos[i]);
+            free(hosts[i]);
+        }
+        free(from);
+        free(mail);
+        free(tos);
+        return NULL;
+    }
+
+    addrs = get_recievers_from_hosts(hosts, ports, is_home_mode);
     if(addrs == NULL)
     {
         printf("Error while getting recievers addresses\n");
@@ -218,6 +235,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
             free(tos[i]);
             free(hosts[i]);
         }
+        free(ports);
         free(from);
         free(mail);
         free(tos);
@@ -234,6 +252,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
             free(hosts[i]);
             free(addrs[i]);
         }
+        free(ports);
         free(from);
         free(addrs);
         free(mail);
@@ -257,6 +276,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
                 free(hosts[j]);
                 free(addrs[j]);
             }
+            free(ports);
             free(from);
             free(addrs);
             free(text);
@@ -275,6 +295,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     mail->from = from;
     mail->recievers = tos;
     mail->hosts = addrs;
+    mail->ports = ports;
     mail->mail_text = text;
     mail->tos_count = to_count;
     mail->text_len = str_num - to_count - 2;
@@ -295,6 +316,7 @@ void clear_mail(mail_t* mail)
     }
     free(mail->hosts);
     free(mail->recievers);
+    free(mail->ports);
     for(int i = 0; i < mail->text_len; i++)
     {
         free(mail->mail_text[i]);
@@ -305,7 +327,7 @@ void clear_mail(mail_t* mail)
     return;
 }
 
-char** get_recievers_from_hosts(char** hosts, int is_home_mode)
+char** get_recievers_from_hosts(char** hosts, int* ports, int is_home_mode)
 {
     int i = 0;
     char** addrs = malloc(sizeof(char*) * MAX_TO_COUNT);
@@ -319,7 +341,7 @@ char** get_recievers_from_hosts(char** hosts, int is_home_mode)
     int rhc = 0;
     while(hosts[i] != NULL && i < MAX_TO_COUNT)
     {
-        char* addr = get_address_from_reciever(hosts[i], is_home_mode);
+        char* addr = get_address_from_reciever(hosts[i], ports+rhc, is_home_mode);
         if(addr == NULL)
         {
             printf("Error while recieving recievers addresses\n");
@@ -344,7 +366,7 @@ char** get_recievers_from_hosts(char** hosts, int is_home_mode)
     return addrs;
 }
 
-char* get_address_from_reciever(char* reciever_host, int is_home_mode)
+char* get_address_from_reciever(char* reciever_host, int* port, int is_home_mode)
 {
     char* result_adr = "home";
     if(strcmp(reciever_host, HOME_HOST) == 0)
@@ -358,6 +380,7 @@ char* get_address_from_reciever(char* reciever_host, int is_home_mode)
                 return NULL;
             }
             strcpy(result_adr, HOME_IP);
+            *port = HOME_PORT;
         }
     }
     else
@@ -388,6 +411,7 @@ char* get_address_from_reciever(char* reciever_host, int is_home_mode)
         }
 
         strcpy(result_adr, addr);
+        *port = SMTP_PORT;
         free(addr);
     }
 

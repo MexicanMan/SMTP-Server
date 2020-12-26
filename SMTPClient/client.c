@@ -18,7 +18,7 @@
 #define END_S "\n.\n"
 
 
-int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t* logger, int is_home_mode)
+int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t* logger, int pipeDescr, int is_home_mode)
 {
 	logger_log(logger, INFO_LOG, "Started batching of mails\n");
 
@@ -41,7 +41,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 			end += pack;
 		}
 		//fork туть
-		if(process_mail_files(mails, start, end, logger, is_home_mode) != 0)
+		if(process_mail_files(mails, start, end, logger, pipeDescr, is_home_mode) != 0)
 		{
 			logger_log(logger, ERROR_LOG, "Error while processing mail pack\n");
 			//printf("Error while processing mail pack from %d to %d\n", start, end);
@@ -52,7 +52,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 	return 0;
 }
 
-int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, logger_t* logger, int is_home_mode)
+int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, logger_t* logger, int pipeDescr, int is_home_mode)
 {
 	logger_log(logger, INFO_LOG, "Processing mails pack\n");
 	//Сначала - считать файлы, удалить их из директории и, затем передать их обработчику
@@ -92,7 +92,7 @@ int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, log
 	}
 	logger_log(logger, INFO_LOG, "Mails pack parsed\n");
 	//Затем по идее врубить селект, создать соединения, обработать их и закрыть
-	if(process_mails(mails, logger) != 0)
+	if(process_mails(mails, mail_count, logger, pipeDescr) != 0)
 	{
 		for(int i = 0; i < mail_count; i++)
 		{
@@ -111,17 +111,182 @@ int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, log
     return 0;
 }
 
-int process_mails(mail_t** mails, logger_t* logger)
+int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDescr)
 {
 	logger_log(logger, INFO_LOG, "Processing mails\n");
 	//Инициализация структур соединений
-	//Инициализация структур select-а
+	int conn_cnt = count_mails_connections(mails, mail_count);
+	conn_t** connections = init_connections(mails, mail_count, conn_cnt, logger);
+	if(connections == NULL)
+	{
+		logger_log(logger, ERROR_LOG, "Can't init connections\n");
+		return -1;
+	}
+
+	logger_log(logger, INFO_LOG, "Connecting...\n");
 	//Вызовы коннектов
+	if(connections_start(connections, conn_cnt, logger) != 0)
+	{
+		logger_log(logger, ERROR_LOG, "Can't start connections\n");
+		clear_connections(connections, conn_cnt);
+		return -1;
+	}
+	logger_log(logger, INFO_LOG, "Connected\n");
+
+	//Инициализация структур select-а
+	fd_set saveReadFS, saveWriteFS, readFS, writeFS;
+    struct timeval selectTimeout;
+
+	FD_ZERO(&saveReadFS);
+    FD_ZERO(&saveWriteFS);
+    FD_ZERO(&readFS);
+    FD_ZERO(&writeFS);
+
+    FD_SET(pipeDescr, &saveReadFS);
+	for(int i = 0; i < conn_cnt; i++)
+	{
+		FD_SET(connections[i]->socket, &saveReadFS);
+	}
+
+	readFS = saveReadFS;
+	writeFS = saveWriteFS;
+
+	int sel_run = 1;
 	//Селект
-	//Обработка селекта
+	while (sel_run)
+    {
+		if (select(FD_SETSIZE, &readFS, &writeFS, NULL, NULL) < 0) 
+		{
+			logger_log(logger, INFO_LOG, "Error in select\n");
+			clear_connections(connections, conn_cnt);
+			return -1;
+		}
+
+		//Обработка селекта
+		for (int i = 0; i < FD_SETSIZE; i++) 
+		{
+			if (!FD_ISSET(i, &readFS) && !FD_ISSET(i, &writeFS))
+			{
+				continue;
+			}
+				
+			if (i == pipeDescr) 
+			{
+				logger_log(logger, INFO_LOG, "Exiting select on close\n");
+				clear_connections(connections, conn_cnt);
+				return -1;
+			}
+
+			conn_t* curr_conn = get_active_connection(connections, conn_cnt, i, logger);
+			if (!curr_conn) 
+			{
+				logger_log(logger, INFO_LOG, "Can't find connection with current socket\n");
+				continue;
+			}
+
+			if (FD_ISSET(i, &readFS)) 
+			{
+				
+			}
+
+			if (FD_ISSET(i, &writeFS)) 
+			{
+				
+			}
+		}
+
+		if(check_connections_for_finish(connections, conn_cnt) != 0)
+		{
+			sel_run = 0;
+		}
+	}
+
 	//Очистка
+	clear_connections(connections, conn_cnt);
 	logger_log(logger, INFO_LOG, "Processing mails finished\n");
     return 0;
+}
+
+conn_t** init_connections(mail_t** mails, int mail_count, int conns_count, logger_t* logger)
+{
+	int cci = 0; //Current connection index
+	conn_t** connections = malloc(sizeof(conn_t*) * conns_count);
+	if(connections == NULL)
+	{
+		logger_log(logger, ERROR_LOG, "Cant allocate memory for connections\n");
+		return -1;
+	}
+	for(int i = 0; i < mail_count; i++)
+	{
+		mail_t* curr_mail = mails[i];
+		for(int j = 0; j < curr_mail->tos_count; j++)
+		{
+			conn_t* new_conn = init_connection(curr_mail, j);
+			if(new_conn == NULL)
+			{
+				logger_log(logger, ERROR_LOG, "Can't init connection\n");
+				for(int k = 0; k < cci; k++)
+				{
+					clear_connection(connections[k]);
+				}
+				free(connections);
+			}
+			connections[cci] = new_conn;
+			cci++;
+		}
+	}
+	return connections;
+}
+
+void clear_connections(conn_t** connections, int conns_count)
+{
+	for(int i = 0; i < conns_count; i++)
+	{
+		clear_connection(connections[i]);
+	}
+	free(connections);
+}
+
+int connections_start(conn_t** connections, int conns_count, logger_t* logger)
+{
+	for(int i = 0; i < conns_count; i++)
+	{
+		if(connection_start(connections[i]) != 0)
+		{
+			logger_log(logger, ERROR_LOG, "Can't start connection\n");
+			return -1;
+		}
+	}
+}
+
+int count_mails_connections(mail_t** mails, int mail_count)
+{
+	int cnt = 0;
+	for(int i = 0; i < mail_count; i++)
+	{
+		cnt += mails[i]->tos_count;
+	}
+	return cnt;
+}
+
+conn_t* get_active_connection(conn_t** connections, int conns_count, int socket, logger_t* logger)
+{
+
+}
+
+int check_connections_for_finish(conn_t** connections, int conns_count)
+{
+	int finished = 1;
+	for(int i = 0; i < conns_count; i++)
+	{
+		if(connections[i]->state != CLIENT_FSM_EV_INVALID &&
+		   connections[i]->state != CLIENT_FSM_EV_QUIT && 
+		   connections[i]->state != CLIENT_FSM_ST_ERROR)
+		{
+			finished = 0;
+		}
+	}
+	return finished;
 }
  
 int main_old(int argc, char **argv) 

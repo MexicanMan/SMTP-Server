@@ -1,4 +1,7 @@
 #include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "../SMTPShared/logger/logger.h"
 #include "./client.h"
@@ -13,6 +16,7 @@
 
 static volatile int run = 1;
 static volatile logger_t* logger;
+static int pipeDescrs[2] = { 0, 0 };
 
 int main_old(int argc, char **argv);
 static void close_handler(int signal);
@@ -21,6 +25,13 @@ int main_loop();
 int main(int argc, char **argv) 
 {
 	int ret;
+
+	if (pipe(pipeDescrs) < 0) 
+	{
+        printf("Can't init pipe\n");
+        return -1;
+    }
+
 	signal(SIGINT, close_handler);
     signal(SIGTERM, close_handler);
 
@@ -28,6 +39,8 @@ int main(int argc, char **argv)
     if (!logger) 
 	{
         printf("Can't init logger\n");
+		close(pipeDescrs[0]);
+    	close(pipeDescrs[1]);
 		return -1;
     }
 
@@ -35,6 +48,8 @@ int main(int argc, char **argv)
 	ret = main_loop();
 
 	logger_free(logger);
+	close(pipeDescrs[0]);
+	close(pipeDescrs[1]);
 	return ret;
 }
 
@@ -61,7 +76,7 @@ int main_loop()
 			logger_log(logger, INFO_LOG, "Some mails in directory\n");
 			//printf("Some mails in directory:\n");
 			
-			if(batch_files_for_processes(mails, PROC_COUNT, logger, IS_HOME_MODE) != 0)
+			if(batch_files_for_processes(mails, PROC_COUNT, logger, pipeDescrs[0], IS_HOME_MODE) != 0)
 			{
 				logger_log(logger, ERROR_LOG, "Error while processing mails\n");
 				//printf("Error while processing mails\n");
@@ -92,6 +107,7 @@ int main_loop()
 
 static void close_handler(int sig) 
 {
+	write(pipeDescrs[1], "END", 3);
     run = 0;
 	return;
 }
