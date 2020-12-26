@@ -125,14 +125,6 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 	}
 
 	logger_log(logger, INFO_LOG, "Connecting...\n");
-	//Вызовы коннектов
-	if(connections_start(connections, conn_cnt, logger) != 0)
-	{
-		logger_log(logger, ERROR_LOG, "Can't start connections\n");
-		clear_connections(connections, conn_cnt);
-		return -1;
-	}
-	logger_log(logger, INFO_LOG, "Connected\n");
 
 	//Инициализация структур select-а
 	fd_set saveReadFS, saveWriteFS, readFS, writeFS;
@@ -144,6 +136,16 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
     FD_ZERO(&writeFS);
 
     FD_SET(pipeDescr, &saveReadFS);
+
+	//Вызовы коннектов
+	if(connections_start(connections, conn_cnt, &writeFS, logger) != 0)
+	{
+		logger_log(logger, ERROR_LOG, "Can't start connections\n");
+		clear_connections(connections, conn_cnt);
+		return -1;
+	}
+	logger_log(logger, INFO_LOG, "Connected\n");
+
 	for(int i = 0; i < conn_cnt; i++)
 	{
 		FD_SET(connections[i]->socket, &saveReadFS);
@@ -187,7 +189,7 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 			if (FD_ISSET(i, &readFS)) 
 			{
-				if(process_conn_read(curr_conn, logger) != 0)
+				if(process_conn_read(curr_conn, &writeFS, logger) != 0)
 				{
 					logger_log(logger, ERROR_LOG, "Error while processing read\n");
 				}
@@ -195,7 +197,7 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 			if (FD_ISSET(i, &writeFS)) 
 			{
-				if(process_conn_write(curr_conn, logger) != 0)
+				if(process_conn_write(curr_conn, &writeFS, logger) != 0)
 				{
 					logger_log(logger, ERROR_LOG, "Error while processing write\n");
 				}
@@ -256,15 +258,17 @@ void clear_connections(conn_t** connections, int conns_count)
 	free(connections);
 }
 
-int connections_start(conn_t** connections, int conns_count, logger_t* logger)
+int connections_start(conn_t** connections, int conns_count, fd_set* writeFS, logger_t* logger)
 {
 	for(int i = 0; i < conns_count; i++)
 	{
 		if(connection_start(connections[i]) != 0)
 		{
 			logger_log(logger, ERROR_LOG, "Can't start connection\n");
+			client_fsm_step(connections[i]->state, CLIENT_FSM_EV_ERROR, connections[i], writeFS);
 			return -1;
 		}
+		client_fsm_step(connections[i]->state, CLIENT_FSM_EV_CONNECTED, connections[i], writeFS);
 	}
 	return 0;
 }
@@ -299,7 +303,7 @@ int check_connections_for_finish(conn_t** connections, int conns_count)
 	for(int i = 0; i < conns_count; i++)
 	{
 		if(connections[i]->state != CLIENT_FSM_ST_INVALID &&
-		   connections[i]->state != CLIENT_FSM_ST_S_QUIT && 
+		   connections[i]->state != CLIENT_FSM_ST_FINISH && 
 		   connections[i]->state != CLIENT_FSM_ST_S_ERROR)
 		{
 			finished = 0;
@@ -321,69 +325,78 @@ int set_connections_need_write(conn_t** connections, int conns_count, fd_set* wr
 	return 0;
 }
 
-int process_conn_read(conn_t* connection, logger_t* logger)
+int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 {
 	int len = conn_read(connection);
 	if(len < 0)
 	{
 		logger_log(logger, ERROR_LOG, "Error while processing read\n");
-		//Переход в сост-е ошибки
+		client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
 		return -1;
 	}
 	else if(len == 0)
 	{
 		logger_log(logger, INFO_LOG, "Connection closed\n");
-		//Переход в сост-е закрыто
+		client_fsm_step(connection->state, CLIENT_FSM_EV_CONNECTION_LOST, connection, writeFS);
 		return 0;
 	}
 	else
 	{
-		int len;
-		char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len);
-		if(len == -1)
+		int sign_msg = 0;
+		while(!sign_msg)
 		{
-			logger_log(logger, ERROR_LOG, "Error while processing message\n");
-			//Переход в сост-е ошибки
-			return -1;
-		}
-		else if(len == 0)
-		{
-			return 0;
-		}
-		else
-		{
-			int res = process_message(message);
-			if(res < 0)
+			int len;
+			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len);
+			if(len == -1)
 			{
-				//bad
+				logger_log(logger, ERROR_LOG, "Error while processing message\n");
+				sign_msg = 1;
+				client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
+				return -1;
 			}
-			else if(res == 0)
+			else if(len == 0)
 			{
-				//nothing
+				sign_msg = 1;
+				return 0;
 			}
 			else
 			{
-				//good
+				int res = process_message(message);
+				if(res < 0)
+				{
+					client_fsm_step(connection->state, CLIENT_FSM_EV_BAD, connection, writeFS);
+					sign_msg = 1;
+
+				}
+				else if(res == 0)
+				{
+					//nothing
+				}
+				else
+				{
+					client_fsm_step(connection->state, CLIENT_FSM_EV_OK, connection, writeFS);
+					sign_msg = 1;
+				}
+				free(message);
 			}
-			free(message);
 		}
 		
 	}
 	
 }
 
-int process_conn_write(conn_t* connection, logger_t* logger)
+int process_conn_write(conn_t* connection, fd_set* writeFS, logger_t* logger)
 {
 	int len = conn_write(connection);
 	if(len < 0)
 	{
 		logger_log(logger, ERROR_LOG, "Error while processing write\n");
-		//Переход в сост-е ошибки
+		client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
 		return -1;
 	}
 	if(connection->to_send == 0)
 	{
-		//Переход в качественно новое состояние (Но в какое и когда?)
+		//hz
 	}
 	return 0;	
 }
@@ -391,7 +404,19 @@ int process_conn_write(conn_t* connection, logger_t* logger)
 int process_message(char* message)
 {
 	int result = 0;
+	if(strlen(message) < 4)
+	{
+		result = -1;
+		return result;
+	}
+
 	//Проверка - последнее ли сообщение
+	if(message[3] == '-')
+	{
+		result = 0;
+		return result;
+	}
+	
 	
 	int responseCode = parse_return_code(message);
 	if (responseCode < 200 || responseCode > 600) {

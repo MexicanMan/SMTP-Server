@@ -43,6 +43,7 @@
  *  comments, or it will be removed the next time it is generated.
  */
 /* START === USER HEADERS === DO NOT CHANGE THIS COMMENT */
+#include "./client_fsm_handlers.h"
 /* END   === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
 #ifndef NULL
@@ -82,7 +83,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INITIALIZED, CLIENT_FSM_TR_CONNECT }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  OK */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -91,7 +93,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_S_EHLO, CLIENT_FSM_TR_EHLO },   /* EVT:  OK */
     { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -100,7 +103,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_S_MF, CLIENT_FSM_TR_MF },       /* EVT:  OK */
     { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -109,7 +113,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_S_RT, CLIENT_FSM_TR_RT },       /* EVT:  OK */
     { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -118,7 +123,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_S_DATA, CLIENT_FSM_TR_DATA },   /* EVT:  OK */
     { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -127,7 +133,8 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  OK */
     { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
-    { CLIENT_FSM_ST_S_QUIT, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
@@ -136,6 +143,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  OK */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  BAD */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
@@ -143,17 +151,29 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
 
   /* STATE 7:  CLIENT_FSM_ST_S_QUIT */
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  OK */
+    { CLIENT_FSM_ST_S_ERROR, CLIENT_FSM_TR_ERROR }, /* EVT:  BAD */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
+    { CLIENT_FSM_ST_FINISH, CLIENT_FSM_TR_QUIT },   /* EVT:  CONNECTION_LOST */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
+  },
+
+
+  /* STATE 8:  CLIENT_FSM_ST_FINISH */
+  { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  OK */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  BAD */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   },
 
 
-  /* STATE 8:  CLIENT_FSM_ST_S_ERROR */
+  /* STATE 9:  CLIENT_FSM_ST_S_ERROR */
   { { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTED */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  OK */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  BAD */
+    { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  QUIT */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID }, /* EVT:  CONNECTION_LOST */
     { CLIENT_FSM_ST_INVALID, CLIENT_FSM_TR_INVALID } /* EVT:  ERROR */
   }
@@ -165,7 +185,7 @@ client_fsm_trans_table[ CLIENT_FSM_STATE_CT ][ CLIENT_FSM_EVENT_CT ] = {
 #define Client_FsmStInit_off     83
 
 
-static char const zClient_FsmStrings[185] =
+static char const zClient_FsmStrings[197] =
 /*     0 */ "** OUT-OF-RANGE **\0"
 /*    19 */ "FSM Error:  in state %d (%s), event %d (%s) is invalid\n\0"
 /*    75 */ "invalid\0"
@@ -177,24 +197,26 @@ static char const zClient_FsmStrings[185] =
 /*   117 */ "s_data\0"
 /*   124 */ "s_mail\0"
 /*   131 */ "s_quit\0"
-/*   138 */ "s_error\0"
-/*   146 */ "connected\0"
-/*   156 */ "ok\0"
-/*   159 */ "bad\0"
-/*   163 */ "connection_lost\0"
-/*   179 */ "error";
+/*   138 */ "finish\0"
+/*   145 */ "s_error\0"
+/*   153 */ "connected\0"
+/*   163 */ "ok\0"
+/*   166 */ "bad\0"
+/*   170 */ "quit\0"
+/*   175 */ "connection_lost\0"
+/*   191 */ "error";
 
-static const size_t aszClient_FsmStates[9] = {
-    83,  88,  100, 107, 112, 117, 124, 131, 138 };
+static const size_t aszClient_FsmStates[10] = {
+    83,  88,  100, 107, 112, 117, 124, 131, 138, 145 };
 
-static const size_t aszClient_FsmEvents[6] = {
-    146, 156, 159, 163, 179, 75 };
+static const size_t aszClient_FsmEvents[7] = {
+    153, 163, 166, 170, 175, 191, 75 };
 
 
-#define CLIENT_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 6) \
+#define CLIENT_FSM_EVT_NAME(t)   ( (((unsigned)(t)) >= 7) \
     ? zClient_FsmStrings : zClient_FsmStrings + aszClient_FsmEvents[t])
 
-#define CLIENT_FSM_STATE_NAME(s) ( (((unsigned)(s)) >= 9) \
+#define CLIENT_FSM_STATE_NAME(s) ( (((unsigned)(s)) >= 10) \
     ? zClient_FsmStrings : zClient_FsmStrings + aszClient_FsmStates[s])
 
 #ifndef EXIT_FAILURE
@@ -226,7 +248,9 @@ client_fsm_invalid_transition( te_client_fsm_state st, te_client_fsm_event evt )
 te_client_fsm_state
 client_fsm_step(
     te_client_fsm_state client_fsm_state,
-    te_client_fsm_event trans_evt )
+    te_client_fsm_event trans_evt,
+    void* connection,
+    void* writeFS )
 {
     te_client_fsm_state nxtSt;
     te_client_fsm_trans trans;
@@ -252,28 +276,28 @@ client_fsm_step(
     switch (trans) {
     case CLIENT_FSM_TR_CONNECT:
         /* START == CONNECT == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_CONNECT();
+        nxtSt = HANDLE_CONNECT(nxtSt, connection, writeFS);
         /* END   == CONNECT == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case CLIENT_FSM_TR_DATA:
         /* START == DATA == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_DATA();
+        nxtSt = HANDLE_DATA(nxtSt, connection, writeFS);
         /* END   == DATA == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case CLIENT_FSM_TR_EHLO:
         /* START == EHLO == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_EHLO();
+        nxtSt = HANDLE_EHLO(nxtSt, connection, writeFS);
         /* END   == EHLO == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case CLIENT_FSM_TR_ERROR:
         /* START == ERROR == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_ERROR();
+        nxtSt = HANDLE_ERROR(nxtSt, connection, writeFS);
         /* END   == ERROR == DO NOT CHANGE THIS COMMENT */
         break;
 
@@ -287,21 +311,21 @@ client_fsm_step(
 
     case CLIENT_FSM_TR_MF:
         /* START == MF == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_MF();
+        nxtSt = HANDLE_MF(nxtSt, connection, writeFS);
         /* END   == MF == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case CLIENT_FSM_TR_QUIT:
         /* START == QUIT == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_QUIT();
+        nxtSt = HANDLE_QUIT(nxtSt, connection, writeFS);
         /* END   == QUIT == DO NOT CHANGE THIS COMMENT */
         break;
 
 
     case CLIENT_FSM_TR_RT:
         /* START == RT == DO NOT CHANGE THIS COMMENT */
-        nxtSt = HANDLE_RT();
+        nxtSt = HANDLE_RT(nxtSt, connection, writeFS);
         /* END   == RT == DO NOT CHANGE THIS COMMENT */
         break;
 

@@ -572,5 +572,8 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
 
 int parse_return_code(char* buf)
 {
-    return 200;
+    char* num[3];
+    strncpy(num, buf, 3);
+    int res = atoi(num);
+    return res;
 }
