@@ -4,11 +4,41 @@ method = case;
 type   = reent;
 prefix = client_fsm;
 
-state  = initialized, s_helo, s_mf, s_rt, s_data, s_mail, s_rst, s_quit, timeout, error;
-event  = connected, ehlo, mf, rt, data, rset, quit, connection_timeout, connection_lost;
+state  = initialized, s_ehlo, s_mf, s_rt, s_data, s_mail, s_quit, s_error;
+event  = connected, ok, bad, connection_lost, error;
 
 transition =
-{ tst = init; tev = connected; next = initialized; ttype = connect; };
+{ tst = init; tev = connected; next = initialized; ttype = connect; },
+{ tst = init; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = init; tev = errored; next = s_error; ttype = error; };
+
 
 transition =
-{ tst = initialized;          tev = ehlo;             next = s_helo;           ttype = ehlo; };
+{ tst = initialized; tev = ok; next = s_ehlo; ttype = ehlo; },
+{ tst = initialized; tev = bad; next = s_error; ttype = error; },
+{ tst = initialized; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = initialized; tev = errored; next = s_error; ttype = error; };
+
+transition =
+{ tst = s_ehlo; tev = ok; next = s_mf; ttype = mf; },
+{ tst = s_ehlo; tev = bad; next = s_error; ttype = error; },
+{ tst = s_ehlo; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = s_ehlo; tev = errored; next = s_error; ttype = error; };
+
+transition =
+{ tst = s_mf; tev = ok; next = s_rt; ttype = rt; },
+{ tst = s_mf; tev = bad; next = s_error; ttype = error; },
+{ tst = s_mf; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = s_mf; tev = errored; next = s_error; ttype = error; };
+
+transition =
+{ tst = s_rt; tev = ok; next = s_data; ttype = data; },
+{ tst = s_rt; tev = bad; next = s_error; ttype = error; },
+{ tst = s_rt; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = s_rt; tev = errored; next = s_error; ttype = error; };
+
+transition =
+{ tst = s_data; tev = ok; next = s_quit; ttype = quit; },
+{ tst = s_data; tev = bad; next = s_error; ttype = error; },
+{ tst = s_data; tev = connection_lost; next = s_quit; ttype = quit; },
+{ tst = s_data; tev = errored; next = s_error; ttype = error; };
