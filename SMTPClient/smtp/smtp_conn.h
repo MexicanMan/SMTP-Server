@@ -18,6 +18,8 @@ typedef struct SMTP_Connection
     char* send_buf;
     char* receive_buf;
     int sended;
+    int to_send;
+    int received;
 } conn_t;
 
 conn_t* init_connection(mail_t* curr_mail, int to_num);

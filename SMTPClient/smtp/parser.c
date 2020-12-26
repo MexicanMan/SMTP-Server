@@ -17,6 +17,8 @@
 #define SMTP_PORT 25
 #define MAX_HOST_ADR_LEN 256
 
+#define END_OF_STR "\r\n"
+
 char** read_file(char* filename, int* str_num)
 {
     FILE *fp;
@@ -527,4 +529,48 @@ char* cut_host_from_reciever(char* reciever)
     }
     from[len-1] = '\0';
     return from;
+}
+
+char* try_parse_message_part(char** buf, int bufsize, int* len)
+{
+    char* find_eos = strstr(buf, END_OF_STR);
+    if(find_eos == NULL)
+    {
+        *len = 0;
+        return NULL;
+    }
+    else
+    {
+        *len = find_eos - *buf;
+        char* msg = malloc(sizeof(char) * *len);
+        if(msg == NULL)
+        {
+            printf("Error while allocating memory for message part\n");
+            *len = -1;
+            return NULL;
+        }
+        strncpy(msg, *buf, *len);
+
+        int new_size = bufsize - *len;
+        char* new_start = *buf+*len;
+        char* new_buf = malloc(sizeof(char) * new_size);
+        if(new_buf == NULL)
+        {
+            printf("Error while allocating memory for message\n");
+            *len = -1;
+            free(msg);
+            return NULL;
+        }
+        strcpy(new_buf, new_start);
+        *buf = new_buf;
+        free(*buf);
+
+        return msg;
+    }
+    
+}
+
+int parse_return_code(char* buf)
+{
+    return 200;
 }

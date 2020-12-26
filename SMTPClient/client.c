@@ -12,6 +12,7 @@
  
 #include "client.h"
 #include "../SMTPShared/shared_strings.h"
+#include "./autogen/client-fsm.h"
 
 #define BUFSIZE 400
 
@@ -186,12 +187,18 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 			if (FD_ISSET(i, &readFS)) 
 			{
-				
+				if(process_conn_read(curr_conn, logger) != 0)
+				{
+					logger_log(logger, ERROR_LOG, "Error while processing read\n");
+				}
 			}
 
 			if (FD_ISSET(i, &writeFS)) 
 			{
-				
+				if(process_conn_write(curr_conn, logger) != 0)
+				{
+					logger_log(logger, ERROR_LOG, "Error while processing write\n");
+				}
 			}
 		}
 
@@ -199,6 +206,8 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 		{
 			sel_run = 0;
 		}
+
+		set_connections_need_write(connections, conn_cnt, &writeFS);
 	}
 
 	//Очистка
@@ -257,6 +266,7 @@ int connections_start(conn_t** connections, int conns_count, logger_t* logger)
 			return -1;
 		}
 	}
+	return 0;
 }
 
 int count_mails_connections(mail_t** mails, int mail_count)
@@ -271,7 +281,16 @@ int count_mails_connections(mail_t** mails, int mail_count)
 
 conn_t* get_active_connection(conn_t** connections, int conns_count, int socket, logger_t* logger)
 {
-
+	conn_t* active = NULL;
+	for(int i = 0; i < conns_count; i++)
+	{
+		if(connections[i]->socket == socket)
+		{
+			active = connections[i];
+			break;
+		}
+	}
+	return active;
 }
 
 int check_connections_for_finish(conn_t** connections, int conns_count)
@@ -279,181 +298,168 @@ int check_connections_for_finish(conn_t** connections, int conns_count)
 	int finished = 1;
 	for(int i = 0; i < conns_count; i++)
 	{
-		if(connections[i]->state != CLIENT_FSM_EV_INVALID &&
-		   connections[i]->state != CLIENT_FSM_EV_QUIT && 
-		   connections[i]->state != CLIENT_FSM_ST_ERROR)
+		if(connections[i]->state != CLIENT_FSM_ST_INVALID &&
+		   connections[i]->state != CLIENT_FSM_ST_S_QUIT && 
+		   connections[i]->state != CLIENT_FSM_ST_S_ERROR)
 		{
 			finished = 0;
 		}
 	}
 	return finished;
 }
- 
-int main_old(int argc, char **argv) 
+
+int set_connections_need_write(conn_t** connections, int conns_count, fd_set* writeFS)
 {
-    struct sockaddr_in addr;    /* для адреса сервера */
-    int sk;                     /* файловый дескриптор сокета */
-    char buf[BUFSIZE];          /* буфер для сообщений */
-	char recv_buf[BUFSIZE];
-    char* inp_buf = NULL;
-	char* print_buf = NULL;
-    int len;
-    fd_set filed_set, ready_set;
- 
-    FD_ZERO(&ready_set);
-    FD_ZERO(&filed_set);
- 
-    if (argc != 2) 
-    {
-        printf("Usage: echoc <ip>\nEx.:   echoc 10.30.0.2\n");
-        exit(0);
-    }
- 
-    /* создаём TCP-сокет */
-    if ((sk = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-    {
-        perror("socket");
-        exit(1);
-    }
- 
-    FD_SET(0, &filed_set);
-    FD_SET(sk, &filed_set);
- 
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(argv[1]);
-    addr.sin_port = htons(8080);
- 
-    /* соединяемся с сервером */
-    if (connect(sk, (struct sockaddr*) &addr, sizeof(addr)) < 0) 
-    {
-        perror("connect");
-        exit(1);
-    }
- 
-    printf("Connected to Echo server. Type /q to quit.\n");
-    while (1) //добавить переменную условия
-    {
-        ready_set = filed_set;
-        if (select(sk+1, &ready_set, NULL, NULL, NULL) == -1) 
-        {
-            perror("select");
-            exit(1);//смэрт
-        }
- 
-        if (FD_ISSET(0, &ready_set)) 
-        {
-			//printf("dal\n");
-            if ((len = read(0, buf, BUFSIZE-1)) < 0) 
-            {
-                perror("read");
-                exit(1);
-            }
+	FD_ZERO(writeFS);
+	for(int i = 0; i < conns_count; i++)
+	{
+		if(connections[i]->to_send > 0)
+		{
+			FD_SET(connections[i]->socket, writeFS);
+		}
+	}
+	return 0;
+}
 
-			if (strlen(buf) == 0)
-                continue;
-            if (strcmp(buf, "/q") == 0)
-                break;
-
-			buf[len] = '\0';
-			
-			size_t input_size = 0;
-			if(inp_buf != NULL)
-				input_size = strlen(inp_buf);
-			size_t full_len = concat_dynamic_strings(&inp_buf, buf, input_size, len);
-			//Потом переделать (или написать на основе старой) функцию объединения буферов
-			if(full_len < 0)
+int process_conn_read(conn_t* connection, logger_t* logger)
+{
+	int len = conn_read(connection);
+	if(len < 0)
+	{
+		logger_log(logger, ERROR_LOG, "Error while processing read\n");
+		//Переход в сост-е ошибки
+		return -1;
+	}
+	else if(len == 0)
+	{
+		logger_log(logger, INFO_LOG, "Connection closed\n");
+		//Переход в сост-е закрыто
+		return 0;
+	}
+	else
+	{
+		int len;
+		char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len);
+		if(len == -1)
+		{
+			logger_log(logger, ERROR_LOG, "Error while processing message\n");
+			//Переход в сост-е ошибки
+			return -1;
+		}
+		else if(len == 0)
+		{
+			return 0;
+		}
+		else
+		{
+			int res = process_message(message);
+			if(res < 0)
 			{
-				perror("concat");
-                exit(1);
+				//bad
 			}
-			
-			char* end = strstr(inp_buf, "\n");
-			//printf("buf - %s\n", buf);
-			//printf("ibuf - %s\n", inp_buf);
-			if(end != NULL)
+			else if(res == 0)
 			{
-				//printf("es\n");
-				int pr_len = end-inp_buf;
-				int end_len = strlen("\n");
-				int post_len = strlen(end) - end_len;
-
-				char* pr_buf = (char*) calloc(pr_len+end_len, sizeof(char));
-				char* post_buf = (char*) calloc(post_len, sizeof(char));
-
-				memcpy(pr_buf, inp_buf, sizeof(char) * (pr_len + end_len));
-				memcpy(post_buf, end+end_len, sizeof(char) * post_len);
-
-				//printf("pr_buf - %s\n", pr_buf);
-				//printf("post_buf - %s\n", post_buf);
-				
-				//printf("Otsilayu - %s\n", pr_buf);
-                //смэрт 2
-				if (full_send(sk, pr_buf, sizeof(char) * (pr_len + end_len), 0) < 0)
-		        {
-		            perror("send");
-		            exit(1);
-		        }
-
-				free(pr_buf);
-				free(post_buf);
-				free(inp_buf);
-				inp_buf = NULL;
-
+				//nothing
 			}
-
-        }
-
-        if (FD_ISSET(sk, &ready_set)) 
-        {
-            len = recv(sk, recv_buf, BUFSIZE, 0);
-            if (len < 0) 
-            {
-                perror("recv");
-                exit(1);
-            } else if (len == 0) 
-            {
-                printf("Remote host has closed the connection\n");
-                exit(1);
-            }
-
-			size_t print_size = 0;
-			if(print_buf != NULL)
-				print_size = strlen(print_buf);
-			size_t full_len = concat_dynamic_strings(&print_buf, recv_buf, print_size, len);
-			//Потом переделать (или написать на основе старой) функцию объединения буферов
-			if(full_len < 0)
+			else
 			{
-				perror("concat");
-                exit(1);
+				//good
 			}
-			//Накопление и печать
-			
-			char* end = strstr(print_buf, END_S);
-			if(end != NULL)
-			{
-				int pr_len = end-print_buf;
-				int end_len = strlen(END_S);
-				int post_len = strlen(end) - end_len;
+			free(message);
+		}
+		
+	}
+	
+}
 
-				char* pr_buf = (char*) calloc(pr_len+end_len, sizeof(char));
-				char* post_buf = (char*) calloc(post_len, sizeof(char));
+int process_conn_write(conn_t* connection, logger_t* logger)
+{
+	int len = conn_write(connection);
+	if(len < 0)
+	{
+		logger_log(logger, ERROR_LOG, "Error while processing write\n");
+		//Переход в сост-е ошибки
+		return -1;
+	}
+	if(connection->to_send == 0)
+	{
+		//Переход в качественно новое состояние (Но в какое и когда?)
+	}
+	return 0;	
+}
 
-				memcpy(pr_buf, print_buf, sizeof(char) * (pr_len + end_len));
-				memcpy(post_buf, end+end_len, sizeof(char) * post_len);
+int process_message(char* message)
+{
+	int result = 0;
+	//Проверка - последнее ли сообщение
+	
+	int responseCode = parse_return_code(message);
+	if (responseCode < 200 || responseCode > 600) {
+		result = -1;
+	} else if (responseCode >= 200 && responseCode < 400) {
+		result = 1;
+	} else {
+		result = -1;
+	}
+	return result;
+}
 
-				printf("<< %s\n", print_buf);
+int conn_read(conn_t* connection)
+{
+	char buf[BUFSIZE];
+	memset(buf, 0, BUFSIZE);
+	int len = recv(connection->socket, buf, BUFSIZE, 0);
+	if(len < 0)
+	{
+		printf("Error in receive\n");
+		return len;
+	}
+	else if(len == 0)
+	{
+		printf("Closed\n");
+		return len;
+	}
+	else
+	{
+		int new_len = concat_dynamic_strings(&connection->receive_buf, buf, connection->received, len);
+		connection->received = new_len;
+	}
+	return len;
+}
 
-				free(pr_buf);
-				free(post_buf);
-				free(print_buf);
-				print_buf = NULL;
+int conn_write(conn_t* connection)
+{
+	char buf[BUFSIZE];
+	memset(buf, 0, BUFSIZE);
+	int send_size = BUFSIZE;
+	if(connection->to_send < BUFSIZE)
+	{
+		send_size = connection->to_send;
+	}
+	strncpy(buf, connection->send_buf, send_size);
+	int len = send(connection->socket, buf, send_size, 0);
+	if(len < 0)
+	{
+		printf("Error in send\n");
+		return len;
+	}
+	else
+	{
+		int old_size = connection->to_send;
+		int new_size = old_size-len;
+		char* new_start = connection->send_buf+len;
+		char* new_buf = malloc(sizeof(char) * new_size);
+		if(new_buf == NULL)
+		{
+			printf("Error while allocating buffer in send\n");
+			return -1;
+		}
 
-			}   
-        }
-    }
- 
-    close(sk);
- 
-    return 0;
+		connection->sended += len;
+		connection->to_send -= len;
+
+		strcpy(new_buf, new_start);
+		free(connection->send_buf);
+	}
+	return len;
 }
