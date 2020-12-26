@@ -52,7 +52,7 @@ regexp.tex: $(REGEXP_FILE)
 
 # server-opts.def -> .tex
 $(TEXINC_DIR)/server-opts.def.tex: $(AUTOGEN_DIR)/server-opts.def
-	$(SRC2TEX) $< 8 | grep -v descrip > $@
+	$(SRC2TEX) $< 7 | grep -v descrip > $@
 
 # sys_test.py -> *.tex
 $(TEXINC_DIR)/sys_test_py.tex: $(SYSTEST_FILE)
