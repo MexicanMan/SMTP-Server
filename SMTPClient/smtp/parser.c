@@ -130,7 +130,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     char** addrs;
     memset(to_raws, NULL, MAX_TO_COUNT);
     memset(hosts, NULL, MAX_TO_COUNT);
-    int to_count;
+    int to_count = 0;
 
     int sn = 1;
     while(strcmp(mail_file_text[sn], "\n") != 0)
@@ -266,6 +266,12 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         }
         strcpy(text[i], mail_file_text[i + to_count + 2]);
     }
+    
+    for(int i = 0; i < to_count; i++)
+    {
+        free(hosts[i]);
+    }
+
     mail->from = from;
     mail->recievers = tos;
     mail->hosts = addrs;
@@ -294,6 +300,7 @@ void clear_mail(mail_t* mail)
         free(mail->mail_text[i]);
     }
     free(mail->mail_text);
+    free(mail->from);
     free(mail);
     return;
 }
@@ -309,18 +316,28 @@ char** get_recievers_from_hosts(char** hosts, int is_home_mode)
     }
     memset(addrs, NULL, MAX_TO_COUNT);
 
+    int rhc = 0;
     while(hosts[i] != NULL && i < MAX_TO_COUNT)
     {
-        addrs[i] = get_address_from_reciever(hosts[i], is_home_mode);
-        if(addrs[i] == NULL)
+        char* addr = get_address_from_reciever(hosts[i], is_home_mode);
+        if(addr == NULL)
         {
             printf("Error while recieving recievers addresses\n");
-            for(int j = 0; j < i; j++)
+            for(int j = 0; j < rhc; j++)
             {
                 free(addrs[j]);
             }
             free(addrs);
             return NULL;
+        }
+        else if(strcmp(addr, "home") == 0)
+        {
+            printf("Reciever - home server. Ignoring.\n");
+        }
+        else
+        {
+            addrs[rhc] = addr;
+            rhc++;
         }
         i++;
     }
@@ -329,16 +346,19 @@ char** get_recievers_from_hosts(char** hosts, int is_home_mode)
 
 char* get_address_from_reciever(char* reciever_host, int is_home_mode)
 {
-    char* result_adr = NULL;
-    if(is_home_mode || strcmp(reciever_host, HOME_HOST) == 0)
+    char* result_adr = "home";
+    if(strcmp(reciever_host, HOME_HOST) == 0)
     {
-        result_adr = malloc(sizeof(char) * MAX_HOST_ADR_LEN);
-        if(result_adr == NULL)
+        if(is_home_mode)
         {
-            printf("Error while allocating memory for reciever address\n");
-            return NULL;
+            result_adr = malloc(sizeof(char) * MAX_HOST_ADR_LEN);
+            if(result_adr == NULL)
+            {
+                printf("Error while allocating memory for reciever address\n");
+                return NULL;
+            }
+            strcpy(result_adr, HOME_IP);
         }
-        strcpy(result_adr, HOME_IP);
     }
     else
     {
@@ -411,7 +431,18 @@ char* get_record(char* host, int type)
     ns_sprintrr(&msg, &rr, NULL, NULL, rows, sizeof(rows));
     //printf("\nrows - %s\n",rows);
 
-    char* tmp = strrchr(rows, '\t') + 1;
+    char* tmp_sp = strrchr(rows, ' ') + 1;
+    char* tmp_tb = strrchr(rows, '\t') + 1;
+    char* tmp;
+    if(tmp_sp > tmp_tb)
+    {
+        tmp = tmp_sp;
+    }
+    else
+    {
+        tmp = tmp_tb;
+    }
+    
     if(tmp == NULL)
     {
         printf("Error while parsing record\n");

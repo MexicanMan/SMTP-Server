@@ -18,8 +18,10 @@
 #define END_S "\n.\n"
 
 
-int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t* logger)
+int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t* logger, int is_home_mode)
 {
+	logger_log(logger, INFO_LOG, "Started batching of mails\n");
+
 	int start = 0;
 	int end = 0;
 	int mails_count = mails->count;
@@ -38,28 +40,87 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 		{
 			end += pack;
 		}
-		//fork with save of pid and other sht
-		//Мб и сначала врубить селект, а всю дичь делать уже потом
-		//do smth
-		if(process_mail_files(mails, start, end) != 0)
+		//fork туть
+		if(process_mail_files(mails, start, end, logger, is_home_mode) != 0)
 		{
 			logger_log(logger, ERROR_LOG, "Error while processing mail pack\n");
 			//printf("Error while processing mail pack from %d to %d\n", start, end);
 			return -1;
 		}
 	}
+	logger_log(logger, INFO_LOG, "Finished batch of mails\n");
 	return 0;
 }
 
-int process_mail_files(mail_files_t* mails, int start_ind, int end_ind)
+int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, logger_t* logger, int is_home_mode)
 {
+	logger_log(logger, INFO_LOG, "Processing mails pack\n");
 	//Сначала - считать файлы, удалить их из директории и, затем передать их обработчику
-	//затем по идее врубить селект, создать соединения, обработать их и закрыть
+	mail_t** mails = malloc(sizeof(mail_t) * end_ind-start_ind);
+	int mail_count = 0;
+	for(int i = start_ind; i <= end_ind; i++)
+	{
+		int str_count;
+		char** mail_text = read_file(mail_files->files[i], &str_count);
+		if(mail_text == NULL)
+		{
+			logger_log(logger, ERROR_LOG, "Error while reading mail from file\n");
+			for(int j = 0; j < mail_count; j++)
+			{
+				clear_mail(mails[j]);
+			}
+			free(mails);
+			return -1;
+		}
+
+		mail_t* mail = parse_mail(mail_text, str_count, is_home_mode);
+		if(mail == NULL)
+		{
+			logger_log(logger, ERROR_LOG, "Error while parsing mail file text\n");
+			for(int j = 0; j < mail_count; j++)
+			{
+				clear_mail(mails[j]);
+			}
+			clear_mail_text(mail_text);
+			free(mails);
+			return -1;
+		}
+		//Освободить считанный текст письма
+		clear_mail_text(mail_text);
+		mails[mail_count] = mail;
+		mail_count++;
+	}
+	logger_log(logger, INFO_LOG, "Mails pack parsed\n");
+	//Затем по идее врубить селект, создать соединения, обработать их и закрыть
+	if(process_mails(mails, logger) != 0)
+	{
+		for(int i = 0; i < mail_count; i++)
+		{
+			clear_mail(mails[i]);
+		}
+		free(mails);
+		return -1;
+	}
+
+	for(int i = 0; i < mail_count; i++)
+	{
+		clear_mail(mails[i]);
+	}
+	free(mails);
+	
     return 0;
 }
 
-int process_mails(char* mail_text/*заменить на структурированные письма*/)
+int process_mails(mail_t** mails, logger_t* logger)
 {
+	logger_log(logger, INFO_LOG, "Processing mails\n");
+	//Инициализация структур соединений
+	//Инициализация структур select-а
+	//Вызовы коннектов
+	//Селект
+	//Обработка селекта
+	//Очистка
+	logger_log(logger, INFO_LOG, "Processing mails finished\n");
     return 0;
 }
  

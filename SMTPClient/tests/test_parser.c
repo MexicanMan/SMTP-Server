@@ -15,12 +15,12 @@ int init_parser_tests()
 
 void test_read_file()
 {
-    int* str_num;
-    mailtext = read_file(TEST_MAIL_FN, str_num); 
-    num = *str_num;
+    int str_num;
+    mailtext = read_file(TEST_MAIL_FN, &str_num); 
+    num = str_num;
     CU_ASSERT_PTR_NOT_NULL(mailtext);
     CU_ASSERT_PTR_NOT_NULL(mailtext[0]);
-    CU_ASSERT_EQUAL(*str_num, 7);
+    CU_ASSERT_EQUAL(str_num, 7);
     CU_ASSERT_STRING_EQUAL(mailtext[0], "X-FROM: <V@arasaka.com>\n");
 }
 
