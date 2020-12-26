@@ -54,14 +54,14 @@
  *  Count of non-terminal states.  The generated states INVALID and DONE
  *  are terminal, but INIT is not  :-).
  */
-#define CLIENT_FSM_STATE_CT  9
+#define CLIENT_FSM_STATE_CT  10
 typedef enum {
     CLIENT_FSM_ST_INIT,        CLIENT_FSM_ST_INITIALIZED,
     CLIENT_FSM_ST_S_EHLO,      CLIENT_FSM_ST_S_MF,
     CLIENT_FSM_ST_S_RT,        CLIENT_FSM_ST_S_DATA,
     CLIENT_FSM_ST_S_MAIL,      CLIENT_FSM_ST_S_QUIT,
-    CLIENT_FSM_ST_S_ERROR,     CLIENT_FSM_ST_INVALID,
-    CLIENT_FSM_ST_DONE
+    CLIENT_FSM_ST_FINISH,      CLIENT_FSM_ST_S_ERROR,
+    CLIENT_FSM_ST_INVALID,     CLIENT_FSM_ST_DONE
 } te_client_fsm_state;
 
 /**
@@ -69,11 +69,12 @@ typedef enum {
  *
  *  Count of the valid transition events
  */
-#define CLIENT_FSM_EVENT_CT 5
+#define CLIENT_FSM_EVENT_CT 6
 typedef enum {
     CLIENT_FSM_EV_CONNECTED,       CLIENT_FSM_EV_OK,
-    CLIENT_FSM_EV_BAD,             CLIENT_FSM_EV_CONNECTION_LOST,
-    CLIENT_FSM_EV_ERROR,           CLIENT_FSM_EV_INVALID
+    CLIENT_FSM_EV_BAD,             CLIENT_FSM_EV_QUIT,
+    CLIENT_FSM_EV_CONNECTION_LOST, CLIENT_FSM_EV_ERROR,
+    CLIENT_FSM_EV_INVALID
 } te_client_fsm_event;
 
 /**
@@ -84,7 +85,9 @@ typedef enum {
 extern te_client_fsm_state
 client_fsm_step(
     te_client_fsm_state client_fsm_state,
-    te_client_fsm_event trans_evt );
+    te_client_fsm_event trans_evt,
+    void* connection,
+    void* writeFS );
 
 #endif /* AUTOFSM_CLIENT_FSM_H_GUARD */
 /*

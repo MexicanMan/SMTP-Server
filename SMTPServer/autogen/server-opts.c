@@ -45,7 +45,7 @@ extern FILE * option_usage_fp;
 /**
  *  static const strings for server options
  */
-static char const server_opt_strs[402] =
+static char const server_opt_strs[485] =
 /*     0 */ "Address to bind\0"
 /*    16 */ "ADDRESS\0"
 /*    24 */ "address\0"
@@ -61,12 +61,18 @@ static char const server_opt_strs[402] =
 /*   145 */ "Path to the client mails directory\0"
 /*   180 */ "CLIENT_MAIL_DIR\0"
 /*   196 */ "client-mail-dir\0"
-/*   212 */ "display extended usage information and exit\0"
-/*   256 */ "help\0"
-/*   261 */ "extended usage information passed thru pager\0"
-/*   306 */ "more-help\0"
-/*   316 */ "SERVER\0"
-/*   323 */ "server - SMTP server\n"
+/*   212 */ "Client name for privilege drop\0"
+/*   243 */ "USER\0"
+/*   248 */ "user\0"
+/*   253 */ "Group name for privilege drop\0"
+/*   283 */ "GROUP\0"
+/*   289 */ "group\0"
+/*   295 */ "display extended usage information and exit\0"
+/*   339 */ "help\0"
+/*   344 */ "extended usage information passed thru pager\0"
+/*   389 */ "more-help\0"
+/*   399 */ "SERVER\0"
+/*   406 */ "server - SMTP server\n"
             "Usage:  %s { -<flag> [<val>] | --<name>[{=| }<val>] }...\n";
 
 /**
@@ -134,14 +140,40 @@ static char const server_opt_strs[402] =
 #define CLIENT_MAIL_DIR_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
 
+/**
+ *  user option description:
+ */
+/** Descriptive text for the user option */
+#define USER_DESC      (server_opt_strs+212)
+/** Upper-cased name for the user option */
+#define USER_NAME      (server_opt_strs+243)
+/** Name string for the user option */
+#define USER_name      (server_opt_strs+248)
+/** Compiled in flag settings for the user option */
+#define USER_FLAGS     (OPTST_DISABLED \
+        | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
+
+/**
+ *  group option description:
+ */
+/** Descriptive text for the group option */
+#define GROUP_DESC      (server_opt_strs+253)
+/** Upper-cased name for the group option */
+#define GROUP_NAME      (server_opt_strs+283)
+/** Name string for the group option */
+#define GROUP_name      (server_opt_strs+289)
+/** Compiled in flag settings for the group option */
+#define GROUP_FLAGS     (OPTST_DISABLED \
+        | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
+
 /*
  *  Help/More_Help option descriptions:
  */
-#define HELP_DESC       (server_opt_strs+212)
-#define HELP_name       (server_opt_strs+256)
+#define HELP_DESC       (server_opt_strs+295)
+#define HELP_name       (server_opt_strs+339)
 #ifdef HAVE_WORKING_FORK
-#define MORE_HELP_DESC  (server_opt_strs+261)
-#define MORE_HELP_name  (server_opt_strs+306)
+#define MORE_HELP_DESC  (server_opt_strs+344)
+#define MORE_HELP_name  (server_opt_strs+389)
 #define MORE_HELP_FLAGS (OPTST_IMM | OPTST_NO_INIT)
 #else
 #define MORE_HELP_DESC  HELP_DESC
@@ -226,6 +258,30 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ CLIENT_MAIL_DIR_DESC, CLIENT_MAIL_DIR_NAME, CLIENT_MAIL_DIR_name,
      /* disablement strs */ NULL, NULL },
 
+  {  /* entry idx, value */ 5, VALUE_OPT_USER,
+     /* equiv idx, value */ 5, VALUE_OPT_USER,
+     /* equivalenced to  */ NO_EQUIVALENT,
+     /* min, max, act ct */ 0, 1, 0,
+     /* opt state flags  */ USER_FLAGS, 0,
+     /* last opt argumnt */ { NULL }, /* --user */
+     /* arg list/cookie  */ NULL,
+     /* must/cannot opts */ NULL, NULL,
+     /* option proc      */ NULL,
+     /* desc, NAME, name */ USER_DESC, USER_NAME, USER_name,
+     /* disablement strs */ NULL, NULL },
+
+  {  /* entry idx, value */ 6, VALUE_OPT_GROUP,
+     /* equiv idx, value */ 6, VALUE_OPT_GROUP,
+     /* equivalenced to  */ NO_EQUIVALENT,
+     /* min, max, act ct */ 0, 1, 0,
+     /* opt state flags  */ GROUP_FLAGS, 0,
+     /* last opt argumnt */ { NULL }, /* --group */
+     /* arg list/cookie  */ NULL,
+     /* must/cannot opts */ NULL, NULL,
+     /* option proc      */ NULL,
+     /* desc, NAME, name */ GROUP_DESC, GROUP_NAME, GROUP_name,
+     /* disablement strs */ NULL, NULL },
+
   {  /* entry idx, value */ INDEX_OPT_HELP, VALUE_OPT_HELP,
      /* equiv idx value  */ NO_EQUIVALENT, VALUE_OPT_HELP,
      /* equivalenced to  */ NO_EQUIVALENT,
@@ -254,9 +310,9 @@ static tOptDesc optDesc[OPTION_CT] = {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /** Reference to the upper cased version of server. */
-#define zPROGNAME       (server_opt_strs+316)
+#define zPROGNAME       (server_opt_strs+399)
 /** Reference to the title line for server usage. */
-#define zUsageTitle     (server_opt_strs+323)
+#define zUsageTitle     (server_opt_strs+406)
 /** There is no server configuration file. */
 #define zRcName         NULL
 /** There are no directories to search for server config files. */
@@ -317,7 +373,7 @@ static void
 doOptPort(tOptions* pOptions, tOptDesc* pOptDesc)
 {
     static struct {long rmin, rmax;} const rng[2] = {
-        { 110, LONG_MIN },  { 1024, 65000 } };
+        { 25, LONG_MIN },  { 1024, 65000 } };
     int  ix;
 
     if (pOptions <= OPTPROC_EMIT_LIMIT)
@@ -402,7 +458,7 @@ tOptions serverOptions = {
       NO_EQUIVALENT, /* '-#' option index */
       NO_EQUIVALENT /* index of default opt */
     },
-    7 /* full option count */, 5 /* user option count */,
+    9 /* full option count */, 7 /* user option count */,
     server_full_usage, server_short_usage,
     NULL, NULL,
     PKGDATADIR, server_packager_info
@@ -550,6 +606,12 @@ static void bogus_function(void) {
 
   /* referenced via serverOptions.pOptDesc->pzText */
   puts(_("Path to the client mails directory"));
+
+  /* referenced via serverOptions.pOptDesc->pzText */
+  puts(_("Client name for privilege drop"));
+
+  /* referenced via serverOptions.pOptDesc->pzText */
+  puts(_("Group name for privilege drop"));
 
   /* referenced via serverOptions.pOptDesc->pzText */
   puts(_("display extended usage information and exit"));

@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 
 #include "smtp_conn.h"
+#include "../autogen/client-fsm.h"
 
 #define INIT_BUF_SIZE 1024
 
@@ -24,6 +25,7 @@ conn_t* init_connection(mail_t* curr_mail, int to_num)
     new_conn->sended = 0;
     new_conn->to_send = 0;
     new_conn->received = 0;
+    new_conn->state = CLIENT_FSM_ST_INIT;
 }
 
 int connection_start(conn_t* connection)
