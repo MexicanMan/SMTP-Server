@@ -30,7 +30,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 	if(mails_count % processes_count)
 		pack++;
 
-	while(end < mails_count - 1)
+	while(end < mails_count)
 	{
 		start = end;
 		if(end + pack >= mails_count)
@@ -39,7 +39,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 		}
 		else
 		{
-			end += pack;
+			end = end + pack - 1;
 		}
 		//fork туть
 		if(process_mail_files(mails, start, end, logger, pipeDescr, is_home_mode) != 0)
@@ -48,6 +48,7 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 			//printf("Error while processing mail pack from %d to %d\n", start, end);
 			return -1;
 		}
+		end++;
 	}
 	logger_log(logger, INFO_LOG, "Finished batch of mails\n");
 	return 0;
@@ -137,8 +138,9 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
     FD_SET(pipeDescr, &saveReadFS);
 
+
 	//Вызовы коннектов
-	if(connections_start(connections, conn_cnt, &writeFS, logger) != 0)
+	if(connections_start(connections, conn_cnt, &saveWriteFS, logger) != 0)
 	{
 		logger_log(logger, ERROR_LOG, "Can't start connections\n");
 		clear_connections(connections, conn_cnt);
@@ -151,14 +153,17 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 		FD_SET(connections[i]->socket, &saveReadFS);
 	}
 
-	readFS = saveReadFS;
-	writeFS = saveWriteFS;
-
 	int sel_run = 1;
 	//Селект
 	while (sel_run)
     {
-		if (select(FD_SETSIZE, &readFS, &writeFS, NULL, NULL) < 0) 
+		readFS = saveReadFS;
+		writeFS = saveWriteFS;
+
+		selectTimeout.tv_sec = 1;
+		selectTimeout.tv_usec = 0;
+
+		if (select(FD_SETSIZE, &readFS, &writeFS, NULL, &selectTimeout) < 0) 
 		{
 			logger_log(logger, INFO_LOG, "Error in select\n");
 			clear_connections(connections, conn_cnt);
@@ -189,7 +194,7 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 			if (FD_ISSET(i, &readFS)) 
 			{
-				if(process_conn_read(curr_conn, &writeFS, logger) != 0)
+				if(process_conn_read(curr_conn, &saveWriteFS, logger) != 0)
 				{
 					logger_log(logger, ERROR_LOG, "Error while processing read\n");
 				}
@@ -197,7 +202,7 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 			if (FD_ISSET(i, &writeFS)) 
 			{
-				if(process_conn_write(curr_conn, &writeFS, logger) != 0)
+				if(process_conn_write(curr_conn, &saveWriteFS, logger) != 0)
 				{
 					logger_log(logger, ERROR_LOG, "Error while processing write\n");
 				}
@@ -206,10 +211,26 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 
 		if(check_connections_for_finish(connections, conn_cnt) != 0)
 		{
+			for(int i = 0; i < conn_cnt; i++)
+			{
+				if(connections[i]->state == CLIENT_FSM_ST_FINISH)
+				{
+					char log_str[500];
+					sprintf(log_str, "Successfully sended mail to %s", connections[i]->to);
+					logger_log(logger, INFO_LOG, log_str);
+				}
+				else
+				{
+					char log_str[500];
+					sprintf(log_str, "Failed to send mail to %s", connections[i]->to);
+					logger_log(logger, INFO_LOG, log_str);
+				}
+				
+			}
 			sel_run = 0;
 		}
 
-		set_connections_need_write(connections, conn_cnt, &writeFS);
+		set_connections_need_write(connections, conn_cnt, &saveWriteFS);
 	}
 
 	//Очистка
@@ -268,7 +289,6 @@ int connections_start(conn_t** connections, int conns_count, fd_set* writeFS, lo
 			client_fsm_step(connections[i]->state, CLIENT_FSM_EV_ERROR, connections[i], writeFS);
 			return -1;
 		}
-		client_fsm_step(connections[i]->state, CLIENT_FSM_EV_CONNECTED, connections[i], writeFS);
 	}
 	return 0;
 }
@@ -290,6 +310,7 @@ conn_t* get_active_connection(conn_t** connections, int conns_count, int socket,
 	{
 		if(connections[i]->socket == socket)
 		{
+			//logger_log(logger, ERROR_LOG, "\Getting %d connection\n");
 			active = connections[i];
 			break;
 		}
@@ -317,7 +338,10 @@ int set_connections_need_write(conn_t** connections, int conns_count, fd_set* wr
 	FD_ZERO(writeFS);
 	for(int i = 0; i < conns_count; i++)
 	{
-		if(connections[i]->to_send > 0)
+		if(connections[i]->to_send > 0 && 
+		(connections[i]->state != CLIENT_FSM_ST_INVALID &&
+		   connections[i]->state != CLIENT_FSM_ST_FINISH && 
+		   connections[i]->state != CLIENT_FSM_ST_S_ERROR))
 		{
 			FD_SET(connections[i]->socket, writeFS);
 		}
@@ -327,16 +351,17 @@ int set_connections_need_write(conn_t** connections, int conns_count, fd_set* wr
 
 int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 {
-	int len = conn_read(connection);
-	if(len < 0)
+	//printf("\nstarted reading\n");
+	int read_len = conn_read(connection);
+	if(read_len < 0)
 	{
 		logger_log(logger, ERROR_LOG, "Error while processing read\n");
 		client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
 		return -1;
 	}
-	else if(len == 0)
+	else if(read_len == 0)
 	{
-		logger_log(logger, INFO_LOG, "Connection closed\n");
+		//logger_log(logger, INFO_LOG, "Connection closed\n");
 		client_fsm_step(connection->state, CLIENT_FSM_EV_CONNECTION_LOST, connection, writeFS);
 		return 0;
 	}
@@ -346,7 +371,7 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 		while(!sign_msg)
 		{
 			int len;
-			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len);
+			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len, &connection->received);
 			if(len == -1)
 			{
 				logger_log(logger, ERROR_LOG, "Error while processing message\n");
@@ -354,10 +379,9 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 				client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
 				return -1;
 			}
-			else if(len == 0)
+			else if(strlen(connection->receive_buf) == 0 && (message == NULL || strlen(message) == 0))
 			{
-				sign_msg = 1;
-				return 0;
+				break;
 			}
 			else
 			{
@@ -380,9 +404,8 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 				free(message);
 			}
 		}
-		
 	}
-	
+	return 0;
 }
 
 int process_conn_write(conn_t* connection, fd_set* writeFS, logger_t* logger)
@@ -441,11 +464,12 @@ int conn_read(conn_t* connection)
 	}
 	else if(len == 0)
 	{
-		printf("Closed\n");
+		//printf("Closed\n");
 		return len;
 	}
 	else
 	{
+		//printf("\nRecieved from %s -\n\t %s\n",connection->host, buf);
 		int new_len = concat_dynamic_strings(&connection->receive_buf, buf, connection->received, len);
 		connection->received = new_len;
 	}
@@ -463,6 +487,7 @@ int conn_write(conn_t* connection)
 	}
 	strncpy(buf, connection->send_buf, send_size);
 	int len = send(connection->socket, buf, send_size, 0);
+	//printf("\nSended to %s-\n\t %s\n",connection->host, buf);
 	if(len < 0)
 	{
 		printf("Error in send\n");
@@ -485,6 +510,7 @@ int conn_write(conn_t* connection)
 
 		strcpy(new_buf, new_start);
 		free(connection->send_buf);
+		connection->send_buf = new_buf;
 	}
 	return len;
 }

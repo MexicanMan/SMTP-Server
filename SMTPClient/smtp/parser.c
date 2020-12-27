@@ -135,6 +135,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     memset(to_raws, NULL, MAX_TO_COUNT);
     memset(hosts, NULL, MAX_TO_COUNT);
     int to_count = 0;
+    int rhc = 0;
 
     int sn = 1;
     while(strcmp(mail_file_text[sn], "\n") != 0)
@@ -194,30 +195,44 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
             free(tos);
             return NULL;
         }
-        tos[i] = to;
+        
 
-        char* host = cut_host_from_reciever(tos[i]);
+        char* host = cut_host_from_reciever(to);
         if(host == NULL)
         {
             printf("Error while processing mail struct addresses\n");
             for(int j = 0; j < i; j++)
             {
-                free(tos[j]);
+                if(j != i-1)
+                {
+                    free(tos[j]);
+                }
                 free(hosts[j]);
             }
+            free(to);
             free(from);
             free(mail);
             free(tos);
             return NULL;
         }
-        hosts[i] = host;
+        else if(strcmp(host, HOME_HOST) == 0 && is_home_mode == 0)
+        {
+            free(host);
+        }
+        else
+        {
+            hosts[rhc] = host;
+            tos[rhc] = to;
+            rhc++;
+        }
+        
     }
 
     int* ports = malloc(sizeof(int) * MAX_TO_COUNT);
     if(ports == NULL)
     {
         printf("Error while allocating ports memory\n");
-        for(int i = 0; i < to_count; i++)
+        for(int i = 0; i < rhc; i++)
         {
             free(tos[i]);
             free(hosts[i]);
@@ -248,7 +263,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     if(text == NULL)
     {
         printf("Error while allocating memory for mail struct text\n");
-        for(int i = 0; i < to_count; i++)
+        for(int i = 0; i < rhc; i++)
         {
             free(tos[i]);
             free(hosts[i]);
@@ -299,7 +314,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     mail->hosts = addrs;
     mail->ports = ports;
     mail->mail_text = text;
-    mail->tos_count = to_count;
+    mail->tos_count = rhc;
     mail->text_len = str_num - to_count - 2;
     return mail;
 }
@@ -531,9 +546,9 @@ char* cut_host_from_reciever(char* reciever)
     return from;
 }
 
-char* try_parse_message_part(char** buf, int bufsize, int* len)
+char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
 {
-    char* find_eos = strstr(buf, END_OF_STR);
+    char* find_eos = strstr(*buf, END_OF_STR);
     if(find_eos == NULL)
     {
         *len = 0;
@@ -551,8 +566,8 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
         }
         strncpy(msg, *buf, *len);
 
-        int new_size = bufsize - *len;
-        char* new_start = *buf+*len;
+        int new_size = bufsize - *len - strlen(END_OF_STR);
+        char* new_start = *buf+*len+strlen(END_OF_STR);
         char* new_buf = malloc(sizeof(char) * new_size);
         if(new_buf == NULL)
         {
@@ -562,8 +577,9 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
             return NULL;
         }
         strcpy(new_buf, new_start);
-        *buf = new_buf;
         free(*buf);
+        *new_len = new_size;
+        *buf = new_buf;
 
         return msg;
     }

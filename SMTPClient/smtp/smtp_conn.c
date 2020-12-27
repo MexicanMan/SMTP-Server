@@ -60,5 +60,9 @@ void clear_connection(conn_t* connection)
     free(connection->receive_buf);
     free(connection->send_buf);
     free(connection);
+    if(connection->socket)
+    {
+        close(connection->socket);
+    }
     return;
 }
