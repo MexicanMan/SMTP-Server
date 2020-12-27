@@ -49,11 +49,13 @@ typedef enum {
     INDEX_OPT_LOG_DIR          =  2,
     INDEX_OPT_MAIL_DIR         =  3,
     INDEX_OPT_CLIENT_MAIL_DIR  =  4,
-    INDEX_OPT_HELP             =  5,
-    INDEX_OPT_MORE_HELP        =  6
+    INDEX_OPT_USER             =  5,
+    INDEX_OPT_GROUP            =  6,
+    INDEX_OPT_HELP             =  7,
+    INDEX_OPT_MORE_HELP        =  8
 } teOptIndex;
 /** count of all options for server */
-#define OPTION_CT    7
+#define OPTION_CT    9
 
 /**
  *  Interface defines for all options.  Replace "n" with the UPPER_CASED
@@ -111,6 +113,8 @@ typedef enum {
 #define VALUE_OPT_LOG_DIR        'l'
 #define VALUE_OPT_MAIL_DIR       'd'
 #define VALUE_OPT_CLIENT_MAIL_DIR 'm'
+#define VALUE_OPT_USER           'u'
+#define VALUE_OPT_GROUP          'g'
 /** option flag (value) for help-value option */
 #define VALUE_OPT_HELP          '?'
 /** option flag (value) for more-help-value option */

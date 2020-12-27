@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <signal.h>
+#include <grp.h>
+#include <pwd.h>
 
 #include "server.h"
 
@@ -35,6 +37,9 @@ typedef struct options_struct {
     const char* log_dir;            ///< Directory to store log files
     const char* maildir;            ///< Directory with local mails
     const char* client_mail_dir;    ///< Directory with mail to client
+
+    const char* user;               ///< User name for privilege drop
+    const char* group;              ///< Group name for privilege drop
 } options_t;
 
 static int pipe_fd[2];  ///< Pipe file descriptors for graceful exit
@@ -53,7 +58,9 @@ options_t fill_options() {
     options_t options = { .address = OPT_ARG(ADDRESS), .port = OPT_VALUE_PORT };
     options.log_dir = HAVE_OPT(LOG_DIR) ? OPT_ARG(LOG_DIR) : BASE_LOG_DIR;
     options.maildir = HAVE_OPT(MAIL_DIR) ? OPT_ARG(MAIL_DIR) : BASE_MAIL_DIR;
-    options.client_mail_dir = HAVE_OPT(CLIENT_MAIL_DIR) ? OPT_ARG(CLIENT_MAIL_DIR) : BASE_CLIENT_MAIL_DIR;    
+    options.client_mail_dir = HAVE_OPT(CLIENT_MAIL_DIR) ? OPT_ARG(CLIENT_MAIL_DIR) : BASE_CLIENT_MAIL_DIR; 
+    options.user = HAVE_OPT(USER) ? OPT_ARG(USER) : NULL;
+    options.group = HAVE_OPT(GROUP) ? OPT_ARG(GROUP) : NULL;
 
     return options;
 }
@@ -65,6 +72,28 @@ int validate_options(options_t options) {
         return -1;
     if (create_dir_if_not_exists(options.client_mail_dir) < 0)
         return -1;
+    
+    if ((!options.user && options.group) || (options.user && !options.group))
+        return -1;
+
+    return 0;
+}
+
+int drop_privilege(const char* user, const char* group) {
+    if (getuid() == 0 && user != NULL && group != NULL) {
+        // Process is running as root, drop privileges
+        struct passwd *p = getpwnam(user);
+        if (!p)
+            return -1;
+        struct group *g = getgrnam(group);
+        if (!g)
+            return -1;
+
+        if (setgid(p->pw_uid) != 0)
+            return -1;
+        if (setuid(g->gr_gid) != 0)
+            return -1;
+    }
 
     return 0;
 }
@@ -79,8 +108,10 @@ int main(int argc, char **argv) {
 
     optionProcess(&serverOptions, argc, argv);
     options_t options = fill_options();
-    if (validate_options(options) < 0)
+    if (validate_options(options) < 0) {
+        errno = EINVAL;
         exit_on_error("validate_options");
+    }
 
     if (pipe2(pipe_fd, O_NONBLOCK) == -1)
         exit_on_error("pipe2");
@@ -95,11 +126,13 @@ int main(int argc, char **argv) {
 
         exit_on_error("logger_init");
     }
-
+    
     server_t* server = server_init(logger, options.address, options.port, SERVER_DOMAIN, 
         options.maildir, options.client_mail_dir, pipe_fd[0]);
     if (server) {
-        server_main(server);
+        if(!drop_privilege(options.user, options.group)) 
+            server_main(server);
+        
         server_finalize(server);
     }   
 
