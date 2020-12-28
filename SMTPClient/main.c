@@ -15,7 +15,7 @@
 
 
 static volatile int run = 1;
-static volatile logger_t* logger;
+static logger_t* logger;
 static int pipeDescrs[2] = { 0, 0 };
 
 int main_old(int argc, char **argv);

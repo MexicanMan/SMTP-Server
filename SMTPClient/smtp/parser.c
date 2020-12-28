@@ -126,12 +126,12 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     }
 
     char* from_raw = mail_file_text[0];
-    char** to_raws[MAX_TO_COUNT];
+    char* to_raws[MAX_TO_COUNT];
     char** tos;
-    char** hosts[MAX_TO_COUNT];
+    char* hosts[MAX_TO_COUNT];
     char** addrs;
-    memset(to_raws, NULL, MAX_TO_COUNT);
-    memset(hosts, NULL, MAX_TO_COUNT);
+    memset(to_raws, 0, MAX_TO_COUNT);
+    memset(hosts, 0, MAX_TO_COUNT);
     int to_count = 0;
     int rhc = 0;
 
@@ -157,7 +157,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         free(mail);
         return NULL;
     }
-    memset(tos, NULL, MAX_TO_COUNT);
+    memset(tos, 0, MAX_TO_COUNT);
 
     char* from = cut_addresses_from_mail_format(from_raw);
     if(from == NULL)
@@ -352,7 +352,7 @@ char** get_recievers_from_hosts(char** hosts, int* ports, int is_home_mode)
         printf("Error while allocating memory for mail struct text\n");
         return NULL;
     }
-    memset(addrs, NULL, MAX_TO_COUNT);
+    memset(addrs, 0, MAX_TO_COUNT);
 
     int rhc = 0;
     while(hosts[i] != NULL && i < MAX_TO_COUNT)
@@ -438,8 +438,8 @@ char* get_record(char* host, int type)
 {
     ns_msg msg;
     ns_rr rr;
-    u_char* record[MAX_RECORD_LENGTH];
-    char* rows[MAX_RECORD_LENGTH];
+    u_char record[MAX_RECORD_LENGTH];
+    char rows[MAX_RECORD_LENGTH];
     memset(rows, '\0', MAX_RECORD_LENGTH);
 
     int resLen = res_query(host, ns_c_any, type, record, sizeof(record));
@@ -595,7 +595,7 @@ char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
 
 int parse_return_code(char* buf)
 {
-    char* num[3];
+    char num[3];
     strncpy(num, buf, 3);
     int res = atoi(num);
     return res;

@@ -44,6 +44,7 @@
  */
 /* START === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 #include "./client_fsm_handlers.h"
+#include <stdlib.h>
 /* END   === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
 #ifndef NULL

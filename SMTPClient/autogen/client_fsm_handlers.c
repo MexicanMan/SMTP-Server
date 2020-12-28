@@ -3,6 +3,8 @@
 #include "../../SMTPShared/shared_strings.h"
 #include <sys/select.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #define DOMAIN "arisaka.com"
 
@@ -61,7 +63,6 @@ te_client_fsm_state HANDLE_QUIT(te_client_fsm_state next_state, void* connection
 te_client_fsm_state HANDLE_FINISH(te_client_fsm_state next_state, void* connection, void* writeFS) 
 {
     conn_t* connect = (conn_t*) connection;
-    fd_set* set = (fd_set*)writeFS;
 
     connect->state = next_state;
     
@@ -71,7 +72,6 @@ te_client_fsm_state HANDLE_FINISH(te_client_fsm_state next_state, void* connecti
 te_client_fsm_state HANDLE_ERROR(te_client_fsm_state next_state, void* connection, void* writeFS) 
 {
     conn_t* connect = (conn_t*) connection;
-    fd_set* set = (fd_set*)writeFS;
 
     connect->state = next_state;
 

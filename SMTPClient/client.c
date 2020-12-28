@@ -290,7 +290,7 @@ conn_t** init_connections(mail_t** mails, int mail_count, int conns_count, logge
 	if(connections == NULL)
 	{
 		logger_log(logger, ERROR_LOG, "Cant allocate memory for connections\n");
-		return -1;
+		return NULL;
 	}
 	for(int i = 0; i < mail_count; i++)
 	{
