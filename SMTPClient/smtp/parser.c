@@ -6,8 +6,8 @@
 #include "../SMTPShared/shared_strings.h"
 #include "parser.h"
 
-#define MAX_STR_LENGTH 1024
-#define MAX_STR_COUNT 1024
+#define MAX_STR_LENGTH 255
+#define MAX_STR_COUNT 1000000
 #define MAX_TO_COUNT 16
 #define MAX_RECORD_LENGTH 2048
 
@@ -94,10 +94,8 @@ char** init_mail_text()
         return NULL;
     }
 
-    for(int i = 0; i < MAX_STR_COUNT; i++)
-    {
-        filetext[i] = NULL;
-    }
+    memset(filetext, 0, MAX_STR_COUNT);
+
     return filetext;
 }
 
@@ -138,7 +136,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     int rhc = 0;
 
     int sn = 1;
-    while(strcmp(mail_file_text[sn], "\n") != 0)
+    while(strcmp(mail_file_text[sn], "\n") != 0 && strcmp(mail_file_text[sn], "\r\n") != 0)
     {
         to_raws[sn-1] = mail_file_text[sn];
         to_count++;
@@ -218,6 +216,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         else if(strcmp(host, HOME_HOST) == 0 && is_home_mode == 0)
         {
             free(host);
+            free(to);
         }
         else
         {
@@ -567,6 +566,7 @@ char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
         strncpy(msg, *buf, *len);
 
         int new_size = bufsize - *len - strlen(END_OF_STR);
+        /*
         char* new_start = *buf+*len+strlen(END_OF_STR);
         char* new_buf = malloc(sizeof(char) * new_size);
         if(new_buf == NULL)
@@ -576,10 +576,14 @@ char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
             free(msg);
             return NULL;
         }
-        strcpy(new_buf, new_start);
-        free(*buf);
+        */
+        //strcpy(new_buf, new_start);
+        //free(*buf);
+        //printf("\n debug b: new_len - %d, *new_len - %d, new_size - %d\n", new_len, *new_len, new_size);
         *new_len = new_size;
-        *buf = new_buf;
+        //printf("\t debug a: new_len - %d, *new_len - %d, new_size - %d", new_len, *new_len, new_size);
+        //*buf = new_buf;
+        memcpy(*buf, buf + *len, sizeof(char) * new_size);
 
         return msg;
     }

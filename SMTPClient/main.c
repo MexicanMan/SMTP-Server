@@ -11,7 +11,7 @@
 #define MAILDIR "./SMTPClient/work_mails"
 #define PROC_COUNT 5
 #define CHECK_PAUSE 1
-#define IS_HOME_MODE 0
+#define IS_HOME_MODE 1
 
 
 static volatile int run = 1;

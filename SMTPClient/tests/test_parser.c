@@ -27,7 +27,7 @@ void test_read_file()
 void test_parse_mail()
 {
     char* from = cut_addresses_from_mail_format(mailtext[0]);
-    test_mail = parse_mail(mailtext, num, 0);
+    test_mail = parse_mail(mailtext, num, 1);
     CU_ASSERT_STRING_EQUAL(from, "V@arasaka.com");
     CU_ASSERT_PTR_NOT_NULL(test_mail);
     CU_ASSERT_PTR_NOT_NULL(test_mail->from);
@@ -42,8 +42,9 @@ void test_parse_mail()
 
 void test_parse_addr()
 {
-    char* addr = get_address_from_reciever("yandex.ru", 0);
-    char* home_addr = get_address_from_reciever("any.com", 1);
+    int port, home_port;
+    char* addr = get_address_from_reciever("yandex.ru", &port, 0);
+    char* home_addr = get_address_from_reciever("arasaka.com", &home_port, 1);
     CU_ASSERT_STRING_EQUAL(home_addr, "127.0.0.1");
     free(addr);
     free(home_addr);

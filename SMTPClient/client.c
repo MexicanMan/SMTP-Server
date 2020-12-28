@@ -14,7 +14,7 @@
 #include "../SMTPShared/shared_strings.h"
 #include "./autogen/client-fsm.h"
 
-#define BUFSIZE 400
+#define BUFSIZE 1000000
 
 #define END_S "\n.\n"
 
@@ -58,7 +58,7 @@ int process_mail_files(mail_files_t* mail_files, int start_ind, int end_ind, log
 {
 	logger_log(logger, INFO_LOG, "Processing mails pack\n");
 	//Сначала - считать файлы, удалить их из директории и, затем передать их обработчику
-	mail_t** mails = malloc(sizeof(mail_t) * end_ind-start_ind);
+	mail_t** mails = malloc(sizeof(mail_t) * (end_ind-start_ind+1));
 	int mail_count = 0;
 	for(int i = start_ind; i <= end_ind; i++)
 	{
@@ -371,7 +371,7 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 		while(!sign_msg)
 		{
 			int len;
-			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len, &connection->received);
+			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len, &(connection->received));
 			if(len == -1)
 			{
 				logger_log(logger, ERROR_LOG, "Error while processing message\n");
@@ -410,6 +410,9 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 
 int process_conn_write(conn_t* connection, fd_set* writeFS, logger_t* logger)
 {
+	//char log_str[500];
+	//snprintf(log_str, 50, "sended message -%s", connection->send_buf);
+	//logger_log(logger, INFO_LOG, log_str);
 	int len = conn_write(connection);
 	if(len < 0)
 	{
@@ -497,6 +500,7 @@ int conn_write(conn_t* connection)
 	{
 		int old_size = connection->to_send;
 		int new_size = old_size-len;
+		/*
 		char* new_start = connection->send_buf+len;
 		char* new_buf = malloc(sizeof(char) * new_size);
 		if(new_buf == NULL)
@@ -504,13 +508,14 @@ int conn_write(conn_t* connection)
 			printf("Error while allocating buffer in send\n");
 			return -1;
 		}
-
+		*/
+		memcpy(connection->send_buf, connection->send_buf + len, sizeof(char) * new_size);
 		connection->sended += len;
 		connection->to_send -= len;
 
-		strcpy(new_buf, new_start);
-		free(connection->send_buf);
-		connection->send_buf = new_buf;
+		//strcpy(new_buf, new_start);
+		//free(connection->send_buf);
+		//connection->send_buf = new_buf;
 	}
 	return len;
 }

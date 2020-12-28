@@ -57,12 +57,18 @@ int connection_start(conn_t* connection)
 
 void clear_connection(conn_t* connection)
 {
-    free(connection->receive_buf);
-    free(connection->send_buf);
-    free(connection);
+    if(connection->receive_buf)
+    {
+        free(connection->receive_buf);
+    }
+    if(connection->send_buf)
+    {
+        free(connection->send_buf);
+    }
     if(connection->socket)
     {
         close(connection->socket);
     }
+    free(connection);
     return;
 }
