@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -21,6 +22,8 @@
 
 int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t* logger, int pipeDescr, int is_home_mode)
 {
+	int pids[processes_count];
+	int ind = 0;
 	logger_log(logger, INFO_LOG, "Started batching of mails\n");
 
 	int start = 0;
@@ -42,14 +45,55 @@ int batch_files_for_processes(mail_files_t* mails, int processes_count, logger_t
 			end = end + pack - 1;
 		}
 		//fork туть
+		
+		int fres = fork();
+		if(fres == -1)
+		{
+			logger_log(logger, INFO_LOG, "Error while creating process\n");
+			//printf("Error while processing mail pack from %d to %d\n", start, end);
+			return -1;
+		}
+		else if(fres == 0)
+		{
+			logger_log(logger, INFO_LOG, "Starting working process\n");
+			if(process_mail_files(mails, start, end, logger, pipeDescr, is_home_mode) != 0)
+			{
+				logger_log(logger, ERROR_LOG, "Error while processing mail pack\n");
+				//printf("Error while processing mail pack from %d to %d\n", start, end);
+				exit(-1);
+			}
+			logger_log(logger, INFO_LOG, "Finished working process\n");
+			exit(0);
+		}
+		else
+		{
+			pids[ind] = fres;
+		}
+
+		/*
 		if(process_mail_files(mails, start, end, logger, pipeDescr, is_home_mode) != 0)
 		{
 			logger_log(logger, ERROR_LOG, "Error while processing mail pack\n");
 			//printf("Error while processing mail pack from %d to %d\n", start, end);
 			return -1;
 		}
+		*/
+
+		ind++;
 		end++;
 	}
+
+	for(int i = 0; i < ind; i++)
+	{
+		int status = 0;
+		int opts = 0;
+		waitpid(pids[i], &status, opts);
+		if(status != 0)
+		{
+			logger_log(logger, ERROR_LOG, "Working process finished with error\n");
+		}
+	}
+
 	logger_log(logger, INFO_LOG, "Finished batch of mails\n");
 	return 0;
 }
@@ -216,13 +260,13 @@ int process_mails(mail_t** mails, int mail_count, logger_t* logger, int pipeDesc
 				if(connections[i]->state == CLIENT_FSM_ST_FINISH)
 				{
 					char log_str[500];
-					sprintf(log_str, "Successfully sended mail to %s", connections[i]->to);
+					sprintf(log_str, "Successfully sended mail to %s\n", connections[i]->to);
 					logger_log(logger, INFO_LOG, log_str);
 				}
 				else
 				{
 					char log_str[500];
-					sprintf(log_str, "Failed to send mail to %s", connections[i]->to);
+					sprintf(log_str, "Failed to send mail to %s\n", connections[i]->to);
 					logger_log(logger, INFO_LOG, log_str);
 				}
 				
@@ -371,7 +415,7 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 		while(!sign_msg)
 		{
 			int len;
-			char* message = try_parse_message_part(&connection->receive_buf, connection->received, &len, &(connection->received));
+			char* message = try_parse_message_part(&connection->receive_buf, connection->to_receive, &len, &(connection->to_receive));
 			if(len == -1)
 			{
 				logger_log(logger, ERROR_LOG, "Error while processing message\n");
@@ -379,17 +423,21 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 				client_fsm_step(connection->state, CLIENT_FSM_EV_ERROR, connection, writeFS);
 				return -1;
 			}
-			else if(strlen(connection->receive_buf) == 0 && (message == NULL || strlen(message) == 0))
+			else if(connection->to_receive == 0 && (message == NULL || strlen(message) == 0))
 			{
+				//logger_log(logger, ERROR_LOG, "Nothing to recieve\n");
 				break;
 			}
 			else
 			{
+				connection->received += len;
 				int res = process_message(message);
 				if(res < 0)
 				{
 					client_fsm_step(connection->state, CLIENT_FSM_EV_BAD, connection, writeFS);
+					//logger_log(logger, ERROR_LOG, "Bad response from server\n");
 					sign_msg = 1;
+					free(message);
 
 				}
 				else if(res == 0)
@@ -398,10 +446,11 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 				}
 				else
 				{
+					//logger_log(logger, INFO_LOG, "Good response from server\n");
 					client_fsm_step(connection->state, CLIENT_FSM_EV_OK, connection, writeFS);
 					sign_msg = 1;
+					free(message);
 				}
-				free(message);
 			}
 		}
 	}
@@ -445,6 +494,7 @@ int process_message(char* message)
 	
 	
 	int responseCode = parse_return_code(message);
+	//printf("return code - %d from msg %s\n", responseCode, message);
 	if (responseCode < 200 || responseCode > 600) {
 		result = -1;
 	} else if (responseCode >= 200 && responseCode < 400) {
@@ -473,8 +523,8 @@ int conn_read(conn_t* connection)
 	else
 	{
 		//printf("\nRecieved from %s -\n\t %s\n",connection->host, buf);
-		int new_len = concat_dynamic_strings(&connection->receive_buf, buf, connection->received, len);
-		connection->received = new_len;
+		int new_len = concat_dynamic_strings(&connection->receive_buf, buf, connection->to_receive, len);
+		connection->to_receive = new_len;
 	}
 	return len;
 }

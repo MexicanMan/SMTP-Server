@@ -25,6 +25,7 @@ conn_t* init_connection(mail_t* curr_mail, int to_num)
     new_conn->sended = 0;
     new_conn->to_send = 0;
     new_conn->received = 0;
+    new_conn->to_receive = 0;
     new_conn->state = CLIENT_FSM_ST_INIT;
 }
 

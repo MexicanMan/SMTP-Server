@@ -25,7 +25,7 @@ mail_files_t* check_directory(char* dir_path)
     }
     else if(count == 0)
     {
-        printf("There is no files in working directory %s\n", dir_path);
+        //printf("There is no files in working directory %s\n", dir_path);
         result->count = 0;
         result->files = files_names;
         return result;

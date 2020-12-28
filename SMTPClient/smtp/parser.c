@@ -547,6 +547,7 @@ char* cut_host_from_reciever(char* reciever)
 
 char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
 {
+    //printf("parsing - %s", *buf);
     char* find_eos = strstr(*buf, END_OF_STR);
     if(find_eos == NULL)
     {
@@ -555,17 +556,18 @@ char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
     }
     else
     {
-        *len = find_eos - *buf;
+        *len = find_eos - *buf + strlen(END_OF_STR);
         char* msg = malloc(sizeof(char) * *len);
         if(msg == NULL)
         {
-            printf("Error while allocating memory for message part\n");
+            //printf("Error while allocating memory for message part\n");
             *len = -1;
             return NULL;
         }
-        strncpy(msg, *buf, *len);
+        //printf("memcpy: msg - %s, buf - %s, len - %d\n", msg, *buf, *len);
+        memcpy(msg, *buf, *len);
 
-        int new_size = bufsize - *len - strlen(END_OF_STR);
+        int new_size = bufsize - *len;
         /*
         char* new_start = *buf+*len+strlen(END_OF_STR);
         char* new_buf = malloc(sizeof(char) * new_size);
@@ -583,7 +585,8 @@ char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
         *new_len = new_size;
         //printf("\t debug a: new_len - %d, *new_len - %d, new_size - %d", new_len, *new_len, new_size);
         //*buf = new_buf;
-        memcpy(*buf, buf + *len, sizeof(char) * new_size);
+        //printf("memcpy: buf - %s, len - %d, new_size - %d\n", *buf, *len, new_size);
+        memcpy(*buf, *buf + *len, sizeof(char) * new_size);
 
         return msg;
     }
