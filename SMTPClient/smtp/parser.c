@@ -442,7 +442,7 @@ char* get_record(char* host, int type)
     char rows[MAX_RECORD_LENGTH];
     memset(rows, '\0', MAX_RECORD_LENGTH);
 
-    int resLen = res_query(host, ns_c_any, type, record, sizeof(record));
+    int resLen = res_query(host, ns_c_in, type, record, sizeof(record));
     if(resLen < 0)
     {
         printf("Error while requesting record\n");

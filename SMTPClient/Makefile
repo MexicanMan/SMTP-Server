@@ -4,7 +4,7 @@ source_dirs  := . autogen ../SMTPShared ../SMTPShared/error ../SMTPShared/logger
 version := -std=c99
 
 cflags:= -Wall -pedantic 
-ldflags := -lm -lresolv
+ldflags := `autoopts-config ldflags` -lm -lresolv
 test_ldflags := -lcunit
 
 source_dirs := $(addprefix ../,$(source_dirs))

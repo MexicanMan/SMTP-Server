@@ -30,7 +30,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/client",
-            "args": ["127.0.0.1"],
+            "args": ["-h", "0", "-p", "4", "-l", "./log_client", "-d", "./work_mails"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
