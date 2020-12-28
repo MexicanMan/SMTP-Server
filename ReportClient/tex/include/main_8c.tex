@@ -1,0 +1,56 @@
+\hypertarget{main_8c}{}\subsection{Файл main.\+c}
+\label{main_8c}\index{main.\+c@{main.\+c}}
+
+
+Main entry point file.  
+
+
+\subsubsection*{Структуры данных}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structoptions__struct}{options\+\_\+struct}
+\begin{DoxyCompactList}\small\item\em Client options struct. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsubsection*{Определения типов}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{structoptions__struct}{options\+\_\+struct} \hyperlink{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}{options\+\_\+t}\hypertarget{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}{}\label{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}
+
+\begin{DoxyCompactList}\small\item\em Client options struct. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsubsection*{Функции}
+\begin{DoxyCompactItemize}
+\item 
+static void {\bfseries close\+\_\+handler} (int signal)\hypertarget{main_8c_adafcb2d413890485316dc00bbd87d2f0}{}\label{main_8c_adafcb2d413890485316dc00bbd87d2f0}
+
+\item 
+int \hyperlink{main_8c_a859307c43da5908cb529781d87068c29}{main\+\_\+loop} ()\hypertarget{main_8c_a859307c43da5908cb529781d87068c29}{}\label{main_8c_a859307c43da5908cb529781d87068c29}
+
+\begin{DoxyCompactList}\small\item\em Main client loop func. \end{DoxyCompactList}\item 
+\hyperlink{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}{options\+\_\+t} {\bfseries fill\+\_\+options} ()\hypertarget{main_8c_a0fec7fc1601ea618067b662f02c512cf}{}\label{main_8c_a0fec7fc1601ea618067b662f02c512cf}
+
+\item 
+int {\bfseries validate\+\_\+options} (\hyperlink{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}{options\+\_\+t} options)\hypertarget{main_8c_ada9147964d2cd1be480dd27aae5294c7}{}\label{main_8c_ada9147964d2cd1be480dd27aae5294c7}
+
+\item 
+int {\bfseries main} (int argc, char $\ast$$\ast$argv)\hypertarget{main_8c_a3c04138a5bfe5d72780bb7e82a18e627}{}\label{main_8c_a3c04138a5bfe5d72780bb7e82a18e627}
+
+\end{DoxyCompactItemize}
+\subsubsection*{Переменные}
+\begin{DoxyCompactItemize}
+\item 
+static volatile int {\bfseries run} = 1\hypertarget{main_8c_a86d4c45d6f679f903dd72e84f4b961c8}{}\label{main_8c_a86d4c45d6f679f903dd72e84f4b961c8}
+
+\item 
+static logger\+\_\+t $\ast$ {\bfseries logger}\hypertarget{main_8c_a9575b06719f9ef5b9443b1dc68d38fe4}{}\label{main_8c_a9575b06719f9ef5b9443b1dc68d38fe4}
+
+\item 
+static int {\bfseries pipe\+Descrs} \mbox{[}2\mbox{]} = \{ 0, 0 \}\hypertarget{main_8c_affb0b2f4ce744f48e98e0a8aad5b673a}{}\label{main_8c_affb0b2f4ce744f48e98e0a8aad5b673a}
+
+\item 
+\hyperlink{main_8c_a30bf13acdd62b5624d37afb6f89a6e0c}{options\+\_\+t} {\bfseries client\+\_\+options}\hypertarget{main_8c_a0b3ee24a66a4de50f4d5714869d1231b}{}\label{main_8c_a0b3ee24a66a4de50f4d5714869d1231b}
+
+\end{DoxyCompactItemize}
+
+
+\subsubsection{Подробное описание}
+Main entry point file. 
+

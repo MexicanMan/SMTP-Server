@@ -437,7 +437,6 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 					client_fsm_step(connection->state, CLIENT_FSM_EV_BAD, connection, writeFS);
 					//logger_log(logger, ERROR_LOG, "Bad response from server\n");
 					sign_msg = 1;
-					free(message);
 
 				}
 				else if(res == 0)
@@ -449,8 +448,8 @@ int process_conn_read(conn_t* connection, fd_set* writeFS, logger_t* logger)
 					//logger_log(logger, INFO_LOG, "Good response from server\n");
 					client_fsm_step(connection->state, CLIENT_FSM_EV_OK, connection, writeFS);
 					sign_msg = 1;
-					free(message);
 				}
+				free(message);
 			}
 		}
 	}

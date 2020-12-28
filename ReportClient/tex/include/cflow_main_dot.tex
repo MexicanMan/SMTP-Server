@@ -1,0 +1,148 @@
+\documentclass{article}
+\usepackage[x11names, rgb]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{snakes,arrows,shapes}
+\usepackage{amsmath}
+%
+%
+
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0pt}%
+
+%
+
+\begin{document}
+\pagestyle{empty}
+%
+%
+%
+
+\enlargethispage{100cm}
+% Start of code
+\begin{tikzpicture}[>=latex',line join=bevel,]
+%%
+\node (client_fsm_step) at (821.5bp,323.0bp) [draw,ellipse] {client\_fsm\_step};
+  \node (clear_connection) at (821.5bp,184.0bp) [draw,ellipse] {clear\_connection};
+  \node (conn_write) at (821.5bp,295.0bp) [draw,ellipse] {conn\_write};
+  \node (FD_SET) at (821.5bp,475.0bp) [draw,ellipse] {FD\_SET};
+  \node (process_mails) at (501.0bp,335.0bp) [draw,ellipse] {process\_mails};
+  \node (main_loop) at (102.0bp,281.0bp) [draw,ellipse] {main\_loop};
+  \node (close_handler) at (102.0bp,211.0bp) [draw,ellipse] {close\_handler};
+  \node (parse_mail) at (501.0bp,225.0bp) [draw,ellipse] {parse\_mail};
+  \node (FD_ZERO) at (821.5bp,501.0bp) [draw,ellipse] {FD\_ZERO};
+  \node (remove) at (242.0bp,320.0bp) [draw,ellipse] {remove};
+  \node (close) at (102.0bp,10.0bp) [draw,ellipse] {close};
+  \node (clear_mail_files) at (242.0bp,266.0bp) [draw,ellipse] {clear\_mail\_files};
+  \node (strlen) at (964.0bp,429.0bp) [draw,ellipse] {strlen};
+  \node (select) at (648.5bp,321.0bp) [draw,ellipse] {select};
+  \node (set_connections_need_write) at (648.5bp,468.0bp) [draw,ellipse] {set\_connections\_need\_write};
+  \node (clear_connections) at (648.5bp,184.0bp) [draw,ellipse] {clear\_connections};
+  \node (pipe) at (102.0bp,38.0bp) [draw,ellipse] {pipe};
+  \node (validate_options) at (102.0bp,183.0bp) [draw,ellipse] {validate\_options};
+  \node (process_message) at (821.5bp,405.0bp) [draw,ellipse] {process\_message};
+  \node (send) at (964.0bp,295.0bp) [draw,ellipse] {send};
+  \node (write) at (242.0bp,210.0bp) [draw,ellipse] {write};
+  \node (exit) at (385.5bp,196.0bp) [draw,ellipse] {exit};
+  \node (sprintf) at (648.5bp,266.0bp) [draw,ellipse] {sprintf};
+  \node (parse_return_code) at (964.0bp,401.0bp) [draw,ellipse] {parse\_return\_code};
+  \node (HAVE_OPT) at (242.0bp,125.0bp) [draw,ellipse] {HAVE\_OPT};
+  \node (process_mail_files) at (385.5bp,280.0bp) [draw,ellipse] {process\_mail\_files};
+  \node (init_connection) at (821.5bp,211.0bp) [draw,ellipse] {init\_connection};
+  \node (main) at (20.0bp,139.0bp) [draw,ellipse] {main};
+  \node (init_connections) at (648.5bp,211.0bp) [draw,ellipse] {init\_connections};
+  \node (waitpid) at (385.5bp,224.0bp) [draw,ellipse] {waitpid};
+  \node (check_connections_for_finish) at (648.5bp,238.0bp) [draw,ellipse] {check\_connections\_for\_finish};
+  \node (get_active_connection) at (648.5bp,511.0bp) [draw,ellipse] {get\_active\_connection};
+  \node (process_conn_read) at (648.5bp,405.0bp) [draw,ellipse] {process\_conn\_read};
+  \node (try_parse_message_part) at (821.5bp,448.0bp) [draw,ellipse] {try\_parse\_message\_part};
+  \node (batch_files_for_processes) at (242.0bp,238.0bp) [draw,ellipse] {batch\_files\_for\_processes};
+  \node (FD_ISSET) at (648.5bp,294.0bp) [draw,ellipse] {FD\_ISSET};
+  \node (clear_mail) at (501.0bp,253.0bp) [draw,ellipse] {clear\_mail};
+  \node (count_mails_connections) at (648.5bp,157.0bp) [draw,ellipse] {count\_mails\_connections};
+  \node (read_file) at (501.0bp,280.0bp) [draw,ellipse] {read\_file};
+  \node (connection_start) at (821.5bp,351.0bp) [draw,ellipse] {connection\_start};
+  \node (connections_start) at (648.5bp,377.0bp) [draw,ellipse] {connections\_start};
+  \node (recv) at (964.0bp,375.0bp) [draw,ellipse] {recv};
+  \node (sleep) at (242.0bp,346.0bp) [draw,ellipse] {sleep};
+  \node (optionProcess) at (102.0bp,239.0bp) [draw,ellipse] {optionProcess};
+  \node (process_conn_write) at (648.5bp,349.0bp) [draw,ellipse] {process\_conn\_write};
+  \node (signal) at (102.0bp,67.0bp) [draw,ellipse] {signal};
+  \node (create_dir_if_not_exists) at (242.0bp,183.0bp) [draw,ellipse] {create\_dir\_if\_not\_exists};
+  \node (fill_options) at (102.0bp,125.0bp) [draw,ellipse] {fill\_options};
+  \node (fork) at (385.5bp,252.0bp) [draw,ellipse] {fork};
+  \node (logger_init) at (102.0bp,96.0bp) [draw,ellipse] {logger\_init};
+  \node (check_directory) at (242.0bp,294.0bp) [draw,ellipse] {check\_directory};
+  \node (conn_read) at (821.5bp,378.0bp) [draw,ellipse] {conn\_read};
+  \node (clear_mail_text) at (501.0bp,307.0bp) [draw,ellipse] {clear\_mail\_text};
+  \node (logger_free) at (102.0bp,154.0bp) [draw,ellipse] {logger\_free};
+  \draw [->] (fill_options) ..controls (154.83bp,125.0bp) and (172.75bp,125.0bp)  .. (HAVE_OPT);
+  \draw [->] (process_message) ..controls (882.04bp,403.3bp) and (888.67bp,403.12bp)  .. (parse_return_code);
+  \draw [->] (set_connections_need_write) ..controls (747.5bp,472.01bp) and (765.02bp,472.73bp)  .. (FD_SET);
+  \draw [->] (process_conn_read) ..controls (721.04bp,393.7bp) and (754.48bp,388.42bp)  .. (conn_read);
+  \draw [->] (process_mails) ..controls (543.67bp,326.69bp) and (547.81bp,323.83bp)  .. (551.0bp,320.0bp) .. controls (570.5bp,296.64bp) and (537.91bp,273.94bp)  .. (559.0bp,252.0bp) .. controls (560.08bp,250.88bp) and (561.21bp,249.82bp)  .. (check_connections_for_finish);
+  \draw [->] (connections_start) ..controls (717.6bp,375.95bp) and (729.04bp,371.68bp)  .. (738.0bp,364.0bp) .. controls (747.18bp,356.13bp) and (737.04bp,346.11bp)  .. (746.0bp,338.0bp) .. controls (750.75bp,333.7bp) and (756.38bp,330.49bp)  .. (client_fsm_step);
+  \draw [->] (process_mail_files) ..controls (433.76bp,291.24bp) and (446.41bp,294.25bp)  .. (clear_mail_text);
+  \draw [->] (main_loop) ..controls (151.03bp,285.52bp) and (168.05bp,287.13bp)  .. (check_directory);
+  \draw [->] (process_conn_read) ..controls (724.34bp,405.0bp) and (741.12bp,405.0bp)  .. (process_message);
+  \draw [->] (process_mail_files) ..controls (449.06bp,280.0bp) and (454.87bp,280.0bp)  .. (read_file);
+  \draw [->] (main_loop) ..controls (151.59bp,275.72bp) and (170.49bp,273.66bp)  .. (clear_mail_files);
+  \draw [->] (main) ..controls (22.04bp,111.85bp) and (26.455bp,73.942bp)  .. (48.0bp,53.0bp) .. controls (54.875bp,46.317bp) and (64.495bp,42.568bp)  .. (pipe);
+  \draw [->] (process_mails) ..controls (543.86bp,326.85bp) and (547.93bp,323.92bp)  .. (551.0bp,320.0bp) .. controls (571.43bp,293.88bp) and (536.79bp,195.63bp)  .. (559.0bp,171.0bp) .. controls (560.82bp,168.98bp) and (562.81bp,167.17bp)  .. (count_mails_connections);
+  \draw [->] (process_conn_read) ..controls (711.5bp,414.21bp) and (729.5bp,416.47bp)  .. (746.0bp,418.0bp) .. controls (812.0bp,424.11bp) and (889.62bp,427.01bp)  .. (strlen);
+  \draw [->] (validate_options) ..controls (156.97bp,183.0bp) and (157.59bp,183.0bp)  .. (create_dir_if_not_exists);
+  \draw [->] (process_conn_write) ..controls (719.05bp,338.42bp) and (746.56bp,334.24bp)  .. (client_fsm_step);
+  \draw [->] (process_mails) ..controls (511.56bp,367.39bp) and (528.43bp,413.61bp)  .. (559.0bp,439.0bp) .. controls (568.23bp,446.67bp) and (579.55bp,452.33bp)  .. (set_connections_need_write);
+  \draw [->] (process_mails) ..controls (543.77bp,326.78bp) and (547.87bp,323.88bp)  .. (551.0bp,320.0bp) .. controls (564.3bp,303.51bp) and (544.58bp,240.52bp)  .. (559.0bp,225.0bp) .. controls (566.62bp,216.8bp) and (576.95bp,212.1bp)  .. (init_connections);
+  \draw [->] (batch_files_for_processes) ..controls (309.21bp,246.94bp) and (314.9bp,249.6bp)  .. (320.0bp,253.0bp) .. controls (325.33bp,256.55bp) and (322.79bp,261.27bp)  .. (328.0bp,265.0bp) .. controls (329.64bp,266.17bp) and (331.37bp,267.26bp)  .. (process_mail_files);
+  \draw [->] (main) ..controls (45.162bp,134.77bp) and (52.12bp,133.55bp)  .. (fill_options);
+  \draw [->] (main_loop) ..controls (132.64bp,265.45bp) and (148.91bp,257.85bp)  .. (164.0bp,253.0bp) .. controls (169.1bp,251.36bp) and (174.46bp,249.86bp)  .. (batch_files_for_processes);
+  \draw [->] (main) ..controls (26.042bp,116.72bp) and (33.286bp,94.446bp)  .. (48.0bp,82.0bp) .. controls (54.143bp,76.804bp) and (61.972bp,73.403bp)  .. (signal);
+  \draw [->] (connections_start) ..controls (706.8bp,368.68bp) and (723.11bp,366.27bp)  .. (738.0bp,364.0bp) .. controls (748.54bp,362.4bp) and (759.82bp,360.64bp)  .. (connection_start);
+  \draw [->] (process_message) ..controls (883.92bp,415.49bp) and (912.08bp,420.3bp)  .. (strlen);
+  \draw [->] (main) ..controls (22.184bp,166.24bp) and (26.759bp,203.42bp)  .. (48.0bp,224.0bp) .. controls (49.494bp,225.45bp) and (51.117bp,226.76bp)  .. (optionProcess);
+  \draw [->] (main_loop) ..controls (123.89bp,303.18bp) and (143.43bp,321.33bp)  .. (164.0bp,331.0bp) .. controls (178.88bp,337.99bp) and (196.84bp,341.73bp)  .. (sleep);
+  \draw [->] (batch_files_for_processes) ..controls (320.56bp,230.33bp) and (335.22bp,228.88bp)  .. (waitpid);
+  \draw [->] (main) ..controls (45.22bp,143.54bp) and (52.822bp,144.97bp)  .. (logger_free);
+  \draw [->] (batch_files_for_processes) ..controls (309.57bp,229.09bp) and (315.07bp,226.41bp)  .. (320.0bp,223.0bp) .. controls (325.58bp,219.14bp) and (322.52bp,214.0bp)  .. (328.0bp,210.0bp) .. controls (336.84bp,203.54bp) and (348.32bp,200.04bp)  .. (exit);
+  \draw [->] (conn_write) ..controls (882.84bp,295.0bp) and (913.38bp,295.0bp)  .. (send);
+  \draw [->] (main) ..controls (24.764bp,104.38bp) and (33.271bp,39.142bp)  .. (48.0bp,24.0bp) .. controls (54.391bp,17.43bp) and (63.475bp,13.822bp)  .. (close);
+  \draw [->] (process_mails) ..controls (541.42bp,325.87bp) and (546.58bp,323.29bp)  .. (551.0bp,320.0bp) .. controls (556.14bp,316.17bp) and (553.6bp,311.46bp)  .. (559.0bp,308.0bp) .. controls (571.33bp,300.1bp) and (586.56bp,296.12bp)  .. (FD_ISSET);
+  \draw [->] (process_mails) ..controls (566.97bp,328.75bp) and (595.47bp,326.01bp)  .. (select);
+  \draw [->] (process_mails) ..controls (543.42bp,326.48bp) and (547.65bp,323.69bp)  .. (551.0bp,320.0bp) .. controls (562.91bp,306.91bp) and (546.27bp,293.29bp)  .. (559.0bp,281.0bp) .. controls (573.31bp,267.18bp) and (595.35bp,263.41bp)  .. (sprintf);
+  \draw [->] (main_loop) ..controls (132.86bp,296.33bp) and (149.0bp,303.59bp)  .. (164.0bp,308.0bp) .. controls (177.52bp,311.97bp) and (192.79bp,314.7bp)  .. (remove);
+  \draw [->] (process_mails) ..controls (519.84bp,358.66bp) and (538.13bp,379.46bp)  .. (559.0bp,390.0bp) .. controls (566.32bp,393.7bp) and (574.37bp,396.51bp)  .. (process_conn_read);
+  \draw [->] (process_mails) ..controls (513.67bp,364.73bp) and (531.33bp,401.61bp)  .. (559.0bp,420.0bp) .. controls (626.51bp,464.87bp) and (665.22bp,419.31bp)  .. (738.0bp,455.0bp) .. controls (742.24bp,457.08bp) and (741.74bp,459.96bp)  .. (746.0bp,462.0bp) .. controls (756.72bp,467.12bp) and (769.17bp,470.25bp)  .. (FD_SET);
+  \draw [->] (main) ..controls (25.868bp,161.75bp) and (33.007bp,184.46bp)  .. (48.0bp,197.0bp) .. controls (49.98bp,198.66bp) and (52.135bp,200.12bp)  .. (close_handler);
+  \draw [->] (process_mails) ..controls (529.87bp,351.75bp) and (544.82bp,359.49bp)  .. (559.0bp,364.0bp) .. controls (568.01bp,366.87bp) and (577.73bp,369.11bp)  .. (connections_start);
+  \draw [->] (process_mail_files) ..controls (413.95bp,299.5bp) and (433.0bp,311.83bp)  .. (451.0bp,320.0bp) .. controls (453.83bp,321.28bp) and (456.79bp,322.49bp)  .. (process_mails);
+  \draw [->] (process_conn_read) ..controls (701.08bp,419.34bp) and (724.78bp,425.72bp)  .. (746.0bp,431.0bp) .. controls (753.87bp,432.96bp) and (762.23bp,434.95bp)  .. (try_parse_message_part);
+  \draw [->] (init_connections) ..controls (720.58bp,211.0bp) and (741.35bp,211.0bp)  .. (init_connection);
+  \draw [->] (init_connections) ..controls (705.8bp,202.94bp) and (722.66bp,200.43bp)  .. (738.0bp,198.0bp) .. controls (748.66bp,196.31bp) and (760.07bp,194.43bp)  .. (clear_connection);
+  \draw [->] (conn_read) ..controls (880.94bp,376.75bp) and (913.42bp,376.06bp)  .. (recv);
+  \draw [->] (close_handler) ..controls (167.98bp,210.53bp) and (192.45bp,210.35bp)  .. (write);
+  \draw [->] (batch_files_for_processes) ..controls (324.6bp,246.07bp) and (343.56bp,247.95bp)  .. (fork);
+  \draw [->] (process_mail_files) ..controls (435.66bp,268.31bp) and (450.67bp,264.74bp)  .. (clear_mail);
+  \draw [->] (process_conn_write) ..controls (720.58bp,345.0bp) and (730.23bp,340.74bp)  .. (738.0bp,334.0bp) .. controls (746.81bp,326.36bp) and (737.26bp,316.72bp)  .. (746.0bp,309.0bp) .. controls (753.69bp,302.2bp) and (763.62bp,298.25bp)  .. (conn_write);
+  \draw [->] (process_mails) ..controls (556.01bp,340.2bp) and (569.78bp,341.52bp)  .. (process_conn_write);
+  \draw [->] (main) ..controls (20.469bp,170.21bp) and (22.813bp,221.89bp)  .. (48.0bp,254.0bp) .. controls (52.82bp,260.14bp) and (59.417bp,265.02bp)  .. (main_loop);
+  \draw [->] (process_mails) ..controls (543.82bp,326.82bp) and (547.91bp,323.91bp)  .. (551.0bp,320.0bp) .. controls (567.86bp,298.7bp) and (540.69bp,218.07bp)  .. (559.0bp,198.0bp) .. controls (565.39bp,191.0bp) and (573.76bp,186.53bp)  .. (clear_connections);
+  \draw [->] (process_conn_read) ..controls (719.68bp,402.68bp) and (730.13bp,397.99bp)  .. (738.0bp,390.0bp) .. controls (754.41bp,373.34bp) and (729.85bp,354.91bp)  .. (746.0bp,338.0bp) .. controls (750.48bp,333.3bp) and (756.0bp,329.86bp)  .. (client_fsm_step);
+  \draw [->] (process_mails) ..controls (504.17bp,375.7bp) and (513.12bp,454.71bp)  .. (559.0bp,494.0bp) .. controls (563.49bp,497.85bp) and (568.59bp,500.93bp)  .. (get_active_connection);
+  \draw [->] (process_mails) ..controls (504.59bp,374.15bp) and (514.17bp,447.8bp)  .. (559.0bp,481.0bp) .. controls (567.52bp,487.31bp) and (702.18bp,495.03bp)  .. (FD_ZERO);
+  \draw [->] (main) ..controls (32.575bp,123.78bp) and (39.89bp,115.86bp)  .. (48.0bp,111.0bp) .. controls (51.936bp,108.64bp) and (56.259bp,106.64bp)  .. (logger_init);
+  \draw [->] (main) ..controls (32.269bp,154.54bp) and (39.664bp,162.91bp)  .. (48.0bp,168.0bp) .. controls (49.923bp,169.17bp) and (51.941bp,170.26bp)  .. (validate_options);
+  \draw [->] (set_connections_need_write) ..controls (716.31bp,477.79bp) and (727.63bp,480.55bp)  .. (738.0bp,484.0bp) .. controls (741.77bp,485.26bp) and (742.22bp,486.76bp)  .. (746.0bp,488.0bp) .. controls (755.91bp,491.27bp) and (766.86bp,493.76bp)  .. (FD_ZERO);
+  \draw [->] (clear_connections) ..controls (722.45bp,184.0bp) and (739.97bp,184.0bp)  .. (clear_connection);
+  \draw [->] (process_mail_files) ..controls (435.28bp,270.98bp) and (439.47bp,268.36bp)  .. (443.0bp,265.0bp) .. controls (451.45bp,256.96bp) and (442.7bp,248.2bp)  .. (451.0bp,240.0bp) .. controls (453.24bp,237.79bp) and (455.79bp,235.9bp)  .. (parse_mail);
+%
+\end{tikzpicture}
+% End of code
+
+%
+\end{document}
+%
+
+
+
