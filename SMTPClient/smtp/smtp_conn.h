@@ -20,6 +20,7 @@ typedef struct SMTP_Connection
     int sended;
     int to_send;
     int received;
+    int to_receive;
 } conn_t;
 
 conn_t* init_connection(mail_t* curr_mail, int to_num);

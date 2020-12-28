@@ -1,0 +1,43 @@
+AutoGen Definitions options;
+prog-name = client;
+prog-title = "SMTP client";
+long-opts;
+gnu-usage;  /* GNU style preferred to default */
+
+flag = {
+    name      = home_mode;          
+    value     = h;                  
+    arg-type  = number;
+    arg-range = "0->1";
+    max       = 1;                  
+    min       = 1;                  
+    descrip   = "Is home mode";
+};
+
+flag = {
+    name      = proc_count;         
+    value     = p;                  
+    arg-type  = number;
+    arg-range = "1->10";
+    max       = 1;                  
+    min       = 1;                  
+    descrip   = "Max processes count";
+};
+
+flag = {
+    name      = log_dir;            
+    value     = l;                  
+    arg-type  = string;
+    max       = 1;                  
+    min       = 0;                  
+    descrip   = "Path to the log directory";
+};
+
+flag = {
+    name      = mail_dir;           
+    value     = d;                  
+    arg-type  = string;
+    max       = 1;                  
+    min       = 0;                  
+    descrip   = "Path to the maildir directory";
+};

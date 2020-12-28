@@ -6,8 +6,8 @@
 #include "../SMTPShared/shared_strings.h"
 #include "parser.h"
 
-#define MAX_STR_LENGTH 1024
-#define MAX_STR_COUNT 1024
+#define MAX_STR_LENGTH 255
+#define MAX_STR_COUNT 1000000
 #define MAX_TO_COUNT 16
 #define MAX_RECORD_LENGTH 2048
 
@@ -94,10 +94,8 @@ char** init_mail_text()
         return NULL;
     }
 
-    for(int i = 0; i < MAX_STR_COUNT; i++)
-    {
-        filetext[i] = NULL;
-    }
+    memset(filetext, 0, MAX_STR_COUNT);
+
     return filetext;
 }
 
@@ -128,16 +126,17 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     }
 
     char* from_raw = mail_file_text[0];
-    char** to_raws[MAX_TO_COUNT];
+    char* to_raws[MAX_TO_COUNT];
     char** tos;
-    char** hosts[MAX_TO_COUNT];
+    char* hosts[MAX_TO_COUNT];
     char** addrs;
-    memset(to_raws, NULL, MAX_TO_COUNT);
-    memset(hosts, NULL, MAX_TO_COUNT);
+    memset(to_raws, 0, MAX_TO_COUNT);
+    memset(hosts, 0, MAX_TO_COUNT);
     int to_count = 0;
+    int rhc = 0;
 
     int sn = 1;
-    while(strcmp(mail_file_text[sn], "\n") != 0)
+    while(strcmp(mail_file_text[sn], "\n") != 0 && strcmp(mail_file_text[sn], "\r\n") != 0)
     {
         to_raws[sn-1] = mail_file_text[sn];
         to_count++;
@@ -158,7 +157,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
         free(mail);
         return NULL;
     }
-    memset(tos, NULL, MAX_TO_COUNT);
+    memset(tos, 0, MAX_TO_COUNT);
 
     char* from = cut_addresses_from_mail_format(from_raw);
     if(from == NULL)
@@ -194,30 +193,45 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
             free(tos);
             return NULL;
         }
-        tos[i] = to;
+        
 
-        char* host = cut_host_from_reciever(tos[i]);
+        char* host = cut_host_from_reciever(to);
         if(host == NULL)
         {
             printf("Error while processing mail struct addresses\n");
             for(int j = 0; j < i; j++)
             {
-                free(tos[j]);
+                if(j != i-1)
+                {
+                    free(tos[j]);
+                }
                 free(hosts[j]);
             }
+            free(to);
             free(from);
             free(mail);
             free(tos);
             return NULL;
         }
-        hosts[i] = host;
+        else if(strcmp(host, HOME_HOST) == 0 && is_home_mode == 0)
+        {
+            free(host);
+            free(to);
+        }
+        else
+        {
+            hosts[rhc] = host;
+            tos[rhc] = to;
+            rhc++;
+        }
+        
     }
 
     int* ports = malloc(sizeof(int) * MAX_TO_COUNT);
     if(ports == NULL)
     {
         printf("Error while allocating ports memory\n");
-        for(int i = 0; i < to_count; i++)
+        for(int i = 0; i < rhc; i++)
         {
             free(tos[i]);
             free(hosts[i]);
@@ -248,7 +262,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     if(text == NULL)
     {
         printf("Error while allocating memory for mail struct text\n");
-        for(int i = 0; i < to_count; i++)
+        for(int i = 0; i < rhc; i++)
         {
             free(tos[i]);
             free(hosts[i]);
@@ -299,7 +313,7 @@ mail_t* parse_mail(char** mail_file_text, int str_num, int is_home_mode)
     mail->hosts = addrs;
     mail->ports = ports;
     mail->mail_text = text;
-    mail->tos_count = to_count;
+    mail->tos_count = rhc;
     mail->text_len = str_num - to_count - 2;
     return mail;
 }
@@ -338,7 +352,7 @@ char** get_recievers_from_hosts(char** hosts, int* ports, int is_home_mode)
         printf("Error while allocating memory for mail struct text\n");
         return NULL;
     }
-    memset(addrs, NULL, MAX_TO_COUNT);
+    memset(addrs, 0, MAX_TO_COUNT);
 
     int rhc = 0;
     while(hosts[i] != NULL && i < MAX_TO_COUNT)
@@ -424,11 +438,11 @@ char* get_record(char* host, int type)
 {
     ns_msg msg;
     ns_rr rr;
-    u_char* record[MAX_RECORD_LENGTH];
-    char* rows[MAX_RECORD_LENGTH];
+    u_char record[MAX_RECORD_LENGTH];
+    char rows[MAX_RECORD_LENGTH];
     memset(rows, '\0', MAX_RECORD_LENGTH);
 
-    int resLen = res_query(host, ns_c_any, type, record, sizeof(record));
+    int resLen = res_query(host, ns_c_in, type, record, sizeof(record));
     if(resLen < 0)
     {
         printf("Error while requesting record\n");
@@ -531,9 +545,10 @@ char* cut_host_from_reciever(char* reciever)
     return from;
 }
 
-char* try_parse_message_part(char** buf, int bufsize, int* len)
+char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len)
 {
-    char* find_eos = strstr(buf, END_OF_STR);
+    //printf("parsing - %s", *buf);
+    char* find_eos = strstr(*buf, END_OF_STR);
     if(find_eos == NULL)
     {
         *len = 0;
@@ -541,18 +556,20 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
     }
     else
     {
-        *len = find_eos - *buf;
+        *len = find_eos - *buf + strlen(END_OF_STR);
         char* msg = malloc(sizeof(char) * *len);
         if(msg == NULL)
         {
-            printf("Error while allocating memory for message part\n");
+            //printf("Error while allocating memory for message part\n");
             *len = -1;
             return NULL;
         }
-        strncpy(msg, *buf, *len);
+        //printf("memcpy: msg - %s, buf - %s, len - %d\n", msg, *buf, *len);
+        memcpy(msg, *buf, *len);
 
         int new_size = bufsize - *len;
-        char* new_start = *buf+*len;
+        /*
+        char* new_start = *buf+*len+strlen(END_OF_STR);
         char* new_buf = malloc(sizeof(char) * new_size);
         if(new_buf == NULL)
         {
@@ -561,9 +578,15 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
             free(msg);
             return NULL;
         }
-        strcpy(new_buf, new_start);
-        *buf = new_buf;
-        free(*buf);
+        */
+        //strcpy(new_buf, new_start);
+        //free(*buf);
+        //printf("\n debug b: new_len - %d, *new_len - %d, new_size - %d\n", new_len, *new_len, new_size);
+        *new_len = new_size;
+        //printf("\t debug a: new_len - %d, *new_len - %d, new_size - %d", new_len, *new_len, new_size);
+        //*buf = new_buf;
+        //printf("memcpy: buf - %s, len - %d, new_size - %d\n", *buf, *len, new_size);
+        memcpy(*buf, *buf + *len, sizeof(char) * new_size);
 
         return msg;
     }
@@ -572,7 +595,7 @@ char* try_parse_message_part(char** buf, int bufsize, int* len)
 
 int parse_return_code(char* buf)
 {
-    char* num[3];
+    char num[3];
     strncpy(num, buf, 3);
     int res = atoi(num);
     return res;

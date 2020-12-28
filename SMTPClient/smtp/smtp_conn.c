@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "smtp_conn.h"
 #include "../autogen/client-fsm.h"
@@ -25,7 +28,9 @@ conn_t* init_connection(mail_t* curr_mail, int to_num)
     new_conn->sended = 0;
     new_conn->to_send = 0;
     new_conn->received = 0;
+    new_conn->to_receive = 0;
     new_conn->state = CLIENT_FSM_ST_INIT;
+    return new_conn;
 }
 
 int connection_start(conn_t* connection)
@@ -57,8 +62,18 @@ int connection_start(conn_t* connection)
 
 void clear_connection(conn_t* connection)
 {
-    free(connection->receive_buf);
-    free(connection->send_buf);
+    if(connection->receive_buf)
+    {
+        free(connection->receive_buf);
+    }
+    if(connection->send_buf)
+    {
+        free(connection->send_buf);
+    }
+    if(connection->socket)
+    {
+        close(connection->socket);
+    }
     free(connection);
     return;
 }

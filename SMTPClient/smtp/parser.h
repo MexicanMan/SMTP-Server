@@ -23,7 +23,7 @@ char* cut_addresses_from_mail_format(char* addr_str_raw);
 char* cut_host_from_reciever(char* reciever);
 char* get_record(char* host, int type);
 void clear_mail(mail_t* mail);
-char* try_parse_message_part(char** buf, int bufsize, int* len);
+char* try_parse_message_part(char** buf, int bufsize, int* len, int* new_len);
 int parse_return_code(char* buf);
 
 #endif

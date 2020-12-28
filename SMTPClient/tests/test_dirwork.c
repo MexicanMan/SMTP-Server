@@ -15,7 +15,7 @@ int init_dirwork_tests()
 void test_read_files_count()
 {
     files_count = get_files_count(TEST_MAIL_DIR);
-    CU_ASSERT_EQUAL(files_count, 3);
+    CU_ASSERT_EQUAL(files_count, 2);
 }
 
 void test_read_files()
@@ -23,7 +23,7 @@ void test_read_files()
     files = check_directory(TEST_MAIL_DIR);
 
     CU_ASSERT_PTR_NOT_NULL(files);
-    CU_ASSERT_EQUAL(files->count, 3);
+    CU_ASSERT_EQUAL(files->count, 2);
     CU_ASSERT_PTR_NOT_NULL(files->files);
 }
 
