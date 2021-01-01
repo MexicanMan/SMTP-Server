@@ -8,8 +8,12 @@ To build we use make, so you can simply put:
 * `make [build_type=[release|debug]] [client|server]` - to build either client or server (default build in debug mode)
 
 ## Features
-ToDo
+* Receive mails from any other SMTP agents;
+* Save local mails;
+* Send mails to any further SMTP agents.
+
+Commands: HELO, EHLO, MAIL FROM, RCPT TO, DATA, RSET, QUIT.
 
 ## Authors
-@Mexican_Man - Server part
-@kolmosckvich - Client part
+[@Mexican_Man](https://github.com/MexicanMan) - Server part \
+[@kolmosckvich](https://github.com/kolmosckvich) - Client part
